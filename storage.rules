@@ -1,0 +1,39 @@
+rules_version = '2';
+
+// ===============================================================
+// Assumed Data Model
+// ===============================================================
+// Path: resumes/{userId}/{fileName}
+// Uploaded by the Flutter app directly from the Resume Upload screen
+// (per docs/frontend_design_spec.md screen 8), then the resulting
+// download URL is sent to the backend's /ai/analyze-resume endpoint.
+// Owner-only read/write. PDF only, capped at 10MB to prevent abuse.
+// ===============================================================
+
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    match /resumes/{userId}/{fileName} {
+      allow read: if isOwner(userId);
+
+      allow write: if isOwner(userId) &&
+                     request.resource.size < 10 * 1024 * 1024 &&
+                     request.resource.contentType == 'application/pdf';
+
+      allow delete: if isOwner(userId);
+    }
+
+    // Default deny for anything not explicitly matched above.
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

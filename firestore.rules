@@ -1,0 +1,201 @@
+rules_version = '2';
+
+// ===============================================================
+// Assumed Data Model (see docs/ and project memory for full detail)
+// ===============================================================
+//
+// NOTE ON ARCHITECTURE: The FastAPI backend (app/routes/*.py) uses the
+// Firebase Admin SDK for almost all reads/writes, which BYPASSES these
+// rules entirely. These rules exist to secure the small surface of DIRECT
+// client (Flutter) Firestore access: reading your own user/notification/
+// payment/interview/resumeReport docs, browsing admin-curated reference
+// data (skills/careerRoadmaps/jobs), and updating your own fcmToken /
+// marking a notification read. Every other write goes through the backend.
+//
+// Collection: users
+// Document ID: {uid} (Firebase Auth UID)
+// Fields:
+//   - uid: string (required, immutable, must equal document ID)
+//   - name: string (required, 1-100 chars)
+//   - email: string (required, valid email, immutable from client)
+//   - phone: string (optional, <20 chars)
+//   - education: string (optional, <200 chars)
+//   - degree: string (optional, <200 chars)
+//   - skills: list<string> (optional, <50 items, each <50 chars)
+//   - experienceLevel: string (optional, enum: junior/mid/senior)
+//   - careerGoal: string (optional, <300 chars)
+//   - resumeUrl: string (optional, valid URL)
+//   - isPremium: bool (required, backend/webhook-only from client's POV)
+//   - role: string (required, enum: user/admin/premium_user, backend-only)
+//   - createdAt: timestamp (required, immutable)
+//   - fcmToken: string (optional, <500 chars) — the ONLY field a client
+//     may write directly (see NotificationService._saveTokenToDatabase)
+//
+// Collection: resumeReports
+// Document ID: auto-generated
+// Fields: userId (string, owner), atsScore (number), strengths (list<string>),
+//   weaknesses (list<string>), missingSkills (list<string>),
+//   suggestions (list<string>), createdAt (timestamp)
+// Written only by the backend AI pipeline (Admin SDK). Client: read own only.
+//
+// Collection: skills
+// Document ID: auto-generated
+// Fields: name (string), category (string), difficulty (string)
+// Admin-curated reference data. Client: read-only (all authenticated users).
+//
+// Collection: careerRoadmaps
+// Document ID: auto-generated
+// Fields: title, description (string), requiredSkills, steps, resources (list<string>)
+// Admin-curated reference data. Client: read-only.
+//
+// Collection: jobs
+// Document ID: auto-generated
+// Fields: title, company, location, jobType, experienceLevel, description,
+//   applyLink (string), requiredSkills (list<string>), createdAt (timestamp)
+// Admin-curated reference data. Client: read-only.
+//
+// Collection: interviews
+// Document ID: auto-generated
+// Fields: userId (string, owner), careerPath (string), questions, answers
+//   (list<string>), feedback (string), score (number), createdAt (timestamp)
+// Written only by the backend AI pipeline. Client: read own only.
+//
+// Collection: payments
+// Document ID: {uid} (Firebase Auth UID)
+// Fields: userId (string), stripeCustomerId, subscriptionId, status, plan
+//   (string), createdAt (timestamp)
+// Written only by the backend Stripe webhook (Admin SDK). Client: read own only.
+//
+// Collection: notifications
+// Document ID: auto-generated
+// Fields: userId (string, owner), title (string), message (string),
+//   category (string, optional), deepLink (string, optional), isRead (bool),
+//   createdAt (timestamp)
+// Created by the backend only. Client: read own, and may flip isRead only.
+//
+// ===============================================================
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isValidOptionalString(field, maxLen) {
+      return !(field in request.resource.data) ||
+        (request.resource.data[field] is string &&
+         request.resource.data[field].size() <= maxLen);
+    }
+
+    // hasRequiredFields/hasOnlyAllowedFields/isValidEmail/isValidOptionalUrl/
+    // isValidOptionalStringList were removed as dead code — no collection
+    // below currently allows a client-side create. Reintroduce them (see
+    // git history or docs/) if a client-side create rule is ever added.
+
+    // ===============================================================
+    // users/{userId}
+    // ===============================================================
+    match /users/{userId} {
+      // Full shape: uid, name, email, phone, education, degree, skills,
+      // experienceLevel, careerGoal, resumeUrl, isPremium, role, createdAt,
+      // fcmToken. No client-side validator needed below — create is fully
+      // blocked (backend-only) and update is restricted to exactly the
+      // fcmToken field, validated inline. If client-side create is ever
+      // introduced, reintroduce a hasOnlyAllowedFields/hasRequiredFields/
+      // isValidEmail-based validator here and call it from that rule.
+
+      // PII (email, phone) inside — owner-only read, never public.
+      allow read: if isOwner(userId);
+
+      // The client never creates its own user document — the backend
+      // creates it (Admin SDK, bypasses rules) on first profile save.
+      allow create: if false;
+
+      // Client is only ever allowed to touch its own fcmToken field
+      // (see NotificationService._saveTokenToDatabase). Every other
+      // profile field, plus role/isPremium, is backend/admin-only —
+      // this also blocks a user from self-granting role: 'admin'.
+      allow update: if isOwner(userId) &&
+                       request.resource.data.diff(resource.data).affectedKeys().hasOnly(['fcmToken']) &&
+                       isValidOptionalString('fcmToken', 500);
+
+      allow delete: if false;
+    }
+
+    // ===============================================================
+    // resumeReports/{reportId} — backend-written, owner-read-only
+    // ===============================================================
+    match /resumeReports/{reportId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create, update, delete: if false;
+    }
+
+    // ===============================================================
+    // skills/{skillId} — admin reference data, readable by any signed-in user
+    // ===============================================================
+    match /skills/{skillId} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+
+    // ===============================================================
+    // careerRoadmaps/{roadmapId} — admin reference data
+    // ===============================================================
+    match /careerRoadmaps/{roadmapId} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+
+    // ===============================================================
+    // jobs/{jobId} — admin reference data
+    // ===============================================================
+    match /jobs/{jobId} {
+      allow read: if isAuthenticated();
+      allow write: if false;
+    }
+
+    // ===============================================================
+    // interviews/{interviewId} — backend-written, owner-read-only
+    // ===============================================================
+    match /interviews/{interviewId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create, update, delete: if false;
+    }
+
+    // ===============================================================
+    // payments/{userId} — backend/webhook-written, owner-read-only
+    // Document ID is the user's own uid (see app/payments/stripe_client.py)
+    // ===============================================================
+    match /payments/{userId} {
+      allow read: if isOwner(userId);
+      allow create, update, delete: if false;
+    }
+
+    // ===============================================================
+    // notifications/{notificationId} — backend-written, owner-read,
+    // owner may only flip isRead (see NotificationService.markAsRead)
+    // ===============================================================
+    match /notifications/{notificationId} {
+      allow read: if isAuthenticated() && resource.data.userId == request.auth.uid;
+      allow create, delete: if false;
+      allow update: if isAuthenticated() &&
+                       resource.data.userId == request.auth.uid &&
+                       request.resource.data.diff(resource.data).affectedKeys().hasOnly(['isRead']) &&
+                       request.resource.data.isRead is bool;
+    }
+
+    // Default deny for anything not explicitly matched above.
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

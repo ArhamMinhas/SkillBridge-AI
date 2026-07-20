@@ -1,0 +1,15 @@
+services:
+  api:
+    build: .
+    container_name: skillbridge_api
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    volumes:
+      # Place your downloaded Firebase service account JSON at this path
+      # (gitignored) before starting — never bake it into the image. Mounted
+      # at /app (the Dockerfile's WORKDIR) so it matches the relative
+      # FIREBASE_CREDENTIALS_PATH used for local (non-Docker) runs too.
+      - ./firebase-service-account.json:/app/firebase-service-account.json:ro
+    restart: unless-stopped

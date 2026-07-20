@@ -1,0 +1,13 @@
+# Local tool/IDE state — not part of the project
+.claude/
+.vscode/
+.idea/
+.impeccable/
+*.iml
+
+# Firebase CLI local cache
+.firebase/
+
+# OS
+.DS_Store
+Thumbs.db
