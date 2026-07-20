@@ -111,7 +111,9 @@ final GoRouter appRouter = GoRouter(
         builder: (context, state) => const SettingsScreen()),
     GoRoute(
       path: AppRoutes.resumeResult,
-      builder: (context, state) => const ResumeAnalysisResultScreen(),
+      builder: (context, state) => ResumeAnalysisResultScreen(
+        result: state.extra as Map<String, dynamic>?,
+      ),
     ),
     GoRoute(
       path: AppRoutes.skillAssessment,
@@ -119,7 +121,9 @@ final GoRouter appRouter = GoRouter(
     ),
     GoRoute(
       path: AppRoutes.skillGapReport,
-      builder: (context, state) => const SkillGapReportScreen(),
+      builder: (context, state) => SkillGapReportScreen(
+        report: state.extra as Map<String, dynamic>?,
+      ),
     ),
     GoRoute(
       path: AppRoutes.learningResources,

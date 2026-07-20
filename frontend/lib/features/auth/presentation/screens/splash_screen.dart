@@ -6,8 +6,8 @@ import '../../../../app/config/firebase_status.dart';
 import '../../../../app/config/routes.dart';
 import '../../../../app/config/theme.dart';
 import '../../../../app/utils/responsive.dart';
-import '../../../../core/shared_widgets/animated_gradient_background.dart';
 import '../../../../core/shared_widgets/app_logo_mark.dart';
+import '../../../../core/shared_widgets/mesh_gradient_background.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -89,7 +89,7 @@ class _SplashScreenState extends State<SplashScreen>
         child: Stack(
           fit: StackFit.expand,
           children: [
-            const AnimatedGradientBackground(),
+            const MeshGradientBackground(),
             Center(
               child: Column(
                 mainAxisSize: MainAxisSize.min,

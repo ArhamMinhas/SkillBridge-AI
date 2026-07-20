@@ -25,8 +25,17 @@ class ApiPaths {
   static const String skillScore = '$_v1/data-science/skill-score';
   static const String weakSkills = '$_v1/data-science/weak-skills';
   static const String jobMatchScore = '$_v1/data-science/job-match';
+  static const String careerPathRecommendation =
+      '$_v1/data-science/career-path-recommendation';
+  static const String learningResourcesRecommendation =
+      '$_v1/data-science/learning-resources-recommendation';
+  static const String progressPrediction =
+      '$_v1/data-science/progress-prediction';
 
   static const String createSubscriptionIntent =
       '$_v1/payments/create-subscription-intent';
   static const String cancelSubscription = '$_v1/payments/cancel-subscription';
+
+  static const String adminAnalytics = '$_v1/admin/analytics';
+  static const String adminUsers = '$_v1/admin/users';
 }

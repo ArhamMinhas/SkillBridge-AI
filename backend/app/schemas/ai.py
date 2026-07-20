@@ -3,10 +3,6 @@ from typing import List, Optional
 from pydantic import BaseModel
 
 
-class ResumeAnalysisRequest(BaseModel):
-    resumeUrl: str
-
-
 class ResumeAnalysisResult(BaseModel):
     atsScore: int
     strengths: List[str]

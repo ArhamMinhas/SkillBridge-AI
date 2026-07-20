@@ -29,6 +29,10 @@ class AppColors {
   static const Color mutedLight = Color(0xFF64748B);
   static const Color mutedDark = Color(0xFF94A3B8);
 
+  // Accent — used sparingly for highlights/badges distinct from primary/secondary
+  static const Color accentLight = Color(0xFF06B6D4);
+  static const Color accentDark = Color(0xFF22D3EE);
+
   static const LinearGradient primaryGradient = LinearGradient(
     begin: Alignment.topLeft,
     end: Alignment.bottomRight,
@@ -46,30 +50,109 @@ class AppColors {
     end: Alignment.bottomRight,
     colors: [secondaryLight, errorDark],
   );
+
+  // Mesh background blobs — three brand hues used by [MeshGradientBackground]
+  // so ambient screens (splash/auth) read as one soft, drifting gradient
+  // field instead of a single flat glow.
+  static const List<Color> meshBlobs = [primaryDark, secondaryDark, accentDark];
+
+  /// Translucent glass-panel fill — brightness-aware so the same [GlassCard]
+  /// reads correctly against both the light and dark backgrounds.
+  static Color glassSurface(Brightness brightness) =>
+      brightness == Brightness.dark
+          ? Colors.white.withOpacity(0.06)
+          : Colors.white.withOpacity(0.55);
+
+  static Color glassBorder(Brightness brightness) =>
+      brightness == Brightness.dark
+          ? Colors.white.withOpacity(0.12)
+          : Colors.white.withOpacity(0.65);
+}
+
+/// 4px-based spacing scale — reach for these instead of ad-hoc EdgeInsets
+/// values so rhythm stays consistent across screens.
+class AppSpacing {
+  AppSpacing._();
+  static const double xs = 4;
+  static const double sm = 8;
+  static const double md = 12;
+  static const double lg = 16;
+  static const double xl = 20;
+  static const double xxl = 24;
+  static const double xxxl = 32;
+  static const double huge = 48;
 }
 
 class AppRadius {
   AppRadius._();
-  static const double card = 16;
   static const double button = 12;
   static const double input = 12;
+  static const double card = 16;
+  static const double large = 20;
+  static const double xl = 28;
+  static const double pill = 999;
+}
+
+/// Soft, layered shadow presets — one level of elevation feel, tuned
+/// separately per-surface (dark shadows read heavier on light backgrounds).
+class AppShadows {
+  AppShadows._();
+
+  static List<BoxShadow> soft(Brightness brightness) => [
+        BoxShadow(
+          color: Colors.black
+              .withOpacity(brightness == Brightness.dark ? 0.25 : 0.05),
+          blurRadius: 12,
+          offset: const Offset(0, 4),
+        ),
+      ];
+
+  static List<BoxShadow> medium(Brightness brightness) => [
+        BoxShadow(
+          color: Colors.black
+              .withOpacity(brightness == Brightness.dark ? 0.3 : 0.08),
+          blurRadius: 20,
+          offset: const Offset(0, 8),
+        ),
+      ];
+
+  /// Colored glow behind gradient CTAs/hero elements — a hallmark of the
+  /// "premium/high-tech" feel called for across auth and dashboard screens.
+  static List<BoxShadow> glow(Color color, {double opacity = 0.45}) => [
+        BoxShadow(
+          color: color.withOpacity(opacity),
+          blurRadius: 24,
+          spreadRadius: -4,
+          offset: const Offset(0, 8),
+        ),
+      ];
 }
 
 class AppTextStyles {
   AppTextStyles._();
 
   static TextStyle display1(Color color) => GoogleFonts.outfit(
-      fontSize: 32, fontWeight: FontWeight.w700, color: color);
+      fontSize: 32, fontWeight: FontWeight.w700, color: color, height: 1.15);
   static TextStyle heading1(Color color) => GoogleFonts.outfit(
-      fontSize: 24, fontWeight: FontWeight.w700, color: color);
+      fontSize: 24, fontWeight: FontWeight.w700, color: color, height: 1.2);
   static TextStyle heading2(Color color) => GoogleFonts.outfit(
-      fontSize: 18, fontWeight: FontWeight.w600, color: color);
+      fontSize: 18, fontWeight: FontWeight.w600, color: color, height: 1.25);
+  static TextStyle title(Color color) => GoogleFonts.outfit(
+      fontSize: 16, fontWeight: FontWeight.w600, color: color, height: 1.3);
   static TextStyle bodyLarge(Color color) => GoogleFonts.inter(
-      fontSize: 16, fontWeight: FontWeight.w500, color: color);
+      fontSize: 16, fontWeight: FontWeight.w500, color: color, height: 1.4);
   static TextStyle bodyMedium(Color color) => GoogleFonts.inter(
-      fontSize: 14, fontWeight: FontWeight.w400, color: color);
+      fontSize: 14, fontWeight: FontWeight.w400, color: color, height: 1.45);
+  static TextStyle subtitle(Color color) => GoogleFonts.inter(
+      fontSize: 13, fontWeight: FontWeight.w500, color: color, height: 1.4);
   static TextStyle caption(Color color) => GoogleFonts.inter(
-      fontSize: 12, fontWeight: FontWeight.w500, color: color);
+      fontSize: 12, fontWeight: FontWeight.w500, color: color, height: 1.3);
+  static TextStyle overline(Color color) => GoogleFonts.inter(
+      fontSize: 11,
+      fontWeight: FontWeight.w700,
+      color: color,
+      letterSpacing: 0.8,
+      height: 1.3);
 }
 
 class AppTheme {

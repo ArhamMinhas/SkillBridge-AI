@@ -17,6 +17,7 @@ dependencies:
 
   # Networking
   dio: ^5.4.3+1
+  http_parser: ^4.0.2
   connectivity_plus: ^6.0.5
 
   # Firebase
@@ -62,7 +63,7 @@ dev_dependencies:
   flutter_test:
     sdk: flutter
   flutter_lints: ^3.0.0
-  flutter_launcher_icons: ^0.13.1
+  flutter_launcher_icons: ^0.14.4
   flutter_native_splash: ^2.4.1
 
 # stripe_platform_interface 11.5.0+ uses dart:ui Color's .r/.g/.b/.a getters,
@@ -84,13 +85,18 @@ flutter:
 
 flutter_launcher_icons:
   android: "launcher_icon"
-  image_path: "assets/images/app_logo_highres.png"
-  adaptive_icon_background: "#0F172A"
-  adaptive_icon_foreground: "assets/images/app_logo_foreground.png"
+  image_path: "assets/icon/app_icon.png"
+  ios: true
+  min_sdk_android: 23
+  web:
+    generate: true
+    image_path: "assets/icon/app_icon.png"
+    background_color: "#0F172A"
+    theme_color: "#2563EB"
 
 flutter_native_splash:
   color: "#0F172A"
-  image: "assets/images/app_logo_highres.png"
+  image: "assets/icon/app_icon.png"
   android_12:
     color: "#0F172A"
-    image: "assets/images/app_logo_highres.png"
+    image: "assets/icon/app_icon.png"

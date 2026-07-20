@@ -1,6 +1,7 @@
 import 'dart:ui';
 
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show HapticFeedback;
 import 'package:go_router/go_router.dart';
 
 import '../../app/config/theme.dart';
@@ -116,21 +117,33 @@ class _NavBarButton extends StatelessWidget {
     final muted = Theme.of(context).hintColor;
 
     return InkWell(
-      onTap: onTap,
+      onTap: () {
+        if (!selected) HapticFeedback.selectionClick();
+        onTap();
+      },
       borderRadius: BorderRadius.circular(20),
       child: Column(
         mainAxisAlignment: MainAxisAlignment.center,
         children: [
-          AnimatedScale(
-            scale: selected ? 1.2 : 1.0,
-            duration: const Duration(milliseconds: 200),
-            curve: Curves.easeOutBack,
-            child: Icon(icon, color: selected ? primary : muted, size: 24),
+          AnimatedContainer(
+            duration: const Duration(milliseconds: 220),
+            curve: Curves.easeOutCubic,
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: selected ? primary.withOpacity(0.12) : null,
+              shape: BoxShape.circle,
+            ),
+            child: AnimatedScale(
+              scale: selected ? 1.15 : 1.0,
+              duration: const Duration(milliseconds: 200),
+              curve: Curves.easeOutBack,
+              child: Icon(icon, color: selected ? primary : muted, size: 22),
+            ),
           ),
-          const SizedBox(height: 6),
+          const SizedBox(height: 4),
           AnimatedContainer(
             duration: const Duration(milliseconds: 200),
-            width: selected ? 24 : 0,
+            width: selected ? 20 : 0,
             height: 3,
             decoration: BoxDecoration(
               gradient: selected ? AppColors.primaryGradient : null,

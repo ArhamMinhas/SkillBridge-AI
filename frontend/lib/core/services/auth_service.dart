@@ -1,4 +1,5 @@
 import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/services.dart' show PlatformException;
 import 'package:google_sign_in/google_sign_in.dart';
 
 /// Thin wrapper around FirebaseAuth so controllers never touch the SDK
@@ -61,7 +62,14 @@ class AuthService {
   }
 
   Future<void> signOut() async {
-    await _googleSignIn.signOut();
+    // Google sign-out can throw (e.g. user only ever used email/password, or
+    // Play Services is briefly unreachable) — never let that block the
+    // Firebase sign-out, which is what actually ends the session.
+    try {
+      await _googleSignIn.signOut();
+    } catch (_) {
+      // Ignore — Firebase sign-out below is what matters.
+    }
     await _auth.signOut();
   }
 
@@ -82,8 +90,28 @@ class AuthService {
         return 'Password is too weak — use at least 8 characters';
       case 'sign-in-cancelled':
         return 'Sign-in was cancelled';
+      case 'network-request-failed':
+        return 'Network unavailable. Check your connection';
       default:
         return e.message ?? 'Authentication failed. Please try again';
+    }
+  }
+
+  /// Maps google_sign_in's PlatformException codes to user-friendly copy.
+  /// Kept separate from [friendlyMessage] since Google sign-in failures
+  /// arrive as PlatformException, not FirebaseAuthException.
+  static String friendlyGoogleSignInMessage(Object error) {
+    final code = error is PlatformException ? error.code : null;
+    switch (code) {
+      case 'network_error':
+        return 'Network unavailable. Check your connection';
+      case 'sign_in_canceled':
+        return 'Sign-in was cancelled';
+      case 'sign_in_failed':
+        return 'Google sign-in failed — the app\'s Google configuration '
+            'may be out of date (${(error as PlatformException).message ?? 'unknown error'})';
+      default:
+        return 'Google sign-in failed: $error';
     }
   }
 }

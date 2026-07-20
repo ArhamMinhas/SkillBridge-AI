@@ -10,6 +10,7 @@ import '../../../../core/network/error_handler.dart';
 import '../../../../core/services/auth_service.dart';
 import '../../../../core/shared_widgets/empty_state.dart';
 import '../../../../core/shared_widgets/entrance_fade.dart';
+import '../../../../core/shared_widgets/glass_card.dart';
 import '../../../../core/shared_widgets/shimmer_loader.dart';
 
 class _DashboardStats {
@@ -106,7 +107,9 @@ class _HomeDashboardScreenState extends State<HomeDashboardScreen> {
   }
 
   Future<void> _refresh() async {
-    setState(() => _statsFuture = _loadStats());
+    setState(() {
+      _statsFuture = _loadStats();
+    });
     await _statsFuture;
   }
 
@@ -324,7 +327,7 @@ class _StatsGrid extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Transform.translate(
-      offset: const Offset(0, -20),
+      offset: const Offset(0, -18),
       child: Padding(
         padding: const EdgeInsets.symmetric(horizontal: 20),
         child: Row(
@@ -364,6 +367,9 @@ class _StatsGrid extends StatelessWidget {
   }
 }
 
+/// Frosted glass panel floating over the gradient header — the gradient
+/// bleeds through the blur, so [brightness] is forced to dark regardless of
+/// the app theme (white text/icons read correctly against any header hue).
 class _StatCard extends StatelessWidget {
   final IconData icon;
   final String label;
@@ -379,20 +385,10 @@ class _StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    return Container(
+    return GlassCard(
+      brightness: Brightness.dark,
+      borderRadius: AppRadius.card,
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 12),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(AppRadius.card),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.25 : 0.06),
-            blurRadius: 16,
-            offset: const Offset(0, 6),
-          ),
-        ],
-      ),
       child: Column(
         children: [
           Container(
@@ -403,13 +399,11 @@ class _StatCard extends StatelessWidget {
             child: Icon(icon, color: Colors.white, size: 18),
           ),
           const SizedBox(height: 10),
-          Text(value,
-              style: AppTextStyles.heading1(
-                  Theme.of(context).textTheme.bodyLarge!.color!)),
+          Text(value, style: AppTextStyles.heading1(Colors.white)),
           const SizedBox(height: 2),
           Text(
             label,
-            style: AppTextStyles.caption(Theme.of(context).hintColor),
+            style: AppTextStyles.caption(Colors.white.withOpacity(0.7)),
             textAlign: TextAlign.center,
             overflow: TextOverflow.ellipsis,
           ),

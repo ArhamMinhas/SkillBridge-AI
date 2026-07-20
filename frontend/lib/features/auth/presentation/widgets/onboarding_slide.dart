@@ -31,8 +31,8 @@ class OnboardingSlide extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final textColor = Theme.of(context).textTheme.bodyLarge!.color!;
-    final muted = Theme.of(context).hintColor;
+    const textColor = Colors.white;
+    final muted = Colors.white.withOpacity(0.65);
 
     return LayoutBuilder(
       builder: (context, constraints) {
@@ -71,7 +71,7 @@ class OnboardingSlide extends StatelessWidget {
                   child: Text(
                     data.title,
                     textAlign: TextAlign.center,
-                    style: TextStyle(
+                    style: const TextStyle(
                       fontSize: 24,
                       fontWeight: FontWeight.w700,
                       fontFamily: 'Outfit',
