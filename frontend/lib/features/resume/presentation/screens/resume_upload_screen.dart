@@ -1,3 +1,5 @@
+import 'dart:async';
+
 import 'package:dio/dio.dart' as dio;
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
@@ -17,6 +19,13 @@ import '../../../../core/shared_widgets/entrance_fade.dart';
 
 const _maxResumeBytes = 10 * 1024 * 1024;
 
+/// No real drag-and-drop here — this targets Android/iOS (see project
+/// memory: physical Android device is the primary dev target), and mobile
+/// OSes have no native "drag a file onto an app" gesture the way desktop/
+/// web do. Adding real drop-target support would mean a new package
+/// dependency (`desktop_drop` or similar) for a gesture that's unreachable
+/// on the primary target anyway, so this stays tap-to-pick with a
+/// dashed-border "drop zone" visual for the premium feel instead.
 class ResumeUploadScreen extends StatefulWidget {
   const ResumeUploadScreen({super.key});
 
@@ -131,12 +140,20 @@ class _ResumeUploadScreenState extends State<ResumeUploadScreen> {
                             }),
                   ),
                   const SizedBox(height: 24),
-                  CustomButton(
-                    label: 'Analyze Resume',
-                    icon: Icons.auto_awesome_rounded,
-                    isLoading: _isUploading,
-                    onPressed:
-                        _selectedFile == null || _isUploading ? null : _upload,
+                  AnimatedSwitcher(
+                    duration: const Duration(milliseconds: 250),
+                    transitionBuilder: (child, anim) => FadeTransition(
+                        opacity: anim,
+                        child: SizeTransition(
+                            sizeFactor: anim, axisAlignment: -1, child: child)),
+                    child: _isUploading
+                        ? const _AnalyzingPanel(key: ValueKey('analyzing'))
+                        : CustomButton(
+                            key: const ValueKey('button'),
+                            label: 'Analyze Resume',
+                            icon: Icons.auto_awesome_rounded,
+                            onPressed: _selectedFile == null ? null : _upload,
+                          ),
                   ),
                   if (_featurePending) ...[
                     const SizedBox(height: 32),
@@ -224,9 +241,11 @@ class _UploadDropZoneState extends State<_UploadDropZone>
                         key: ValueKey(hasFile),
                         width: 56,
                         height: 56,
-                        decoration: const BoxDecoration(
+                        decoration: BoxDecoration(
                           gradient: AppColors.primaryGradient,
                           shape: BoxShape.circle,
+                          boxShadow:
+                              AppShadows.glow(AppColors.primaryDark, opacity: 0.3),
                         ),
                         child: Icon(
                           hasFile
@@ -291,6 +310,105 @@ class _UploadDropZoneState extends State<_UploadDropZone>
             ],
           ),
         ),
+      ),
+    );
+  }
+}
+
+/// Replaces the plain button spinner while the resume is uploading —
+/// cycles through fake-but-plausible status text so the wait reads as
+/// "the AI is doing something specific" rather than a bare loading bar.
+class _AnalyzingPanel extends StatefulWidget {
+  const _AnalyzingPanel({super.key});
+
+  @override
+  State<_AnalyzingPanel> createState() => _AnalyzingPanelState();
+}
+
+class _AnalyzingPanelState extends State<_AnalyzingPanel>
+    with SingleTickerProviderStateMixin {
+  static const _messages = [
+    'Extracting text…',
+    'Scanning for keywords…',
+    'Checking ATS formatting…',
+    'Calculating your score…',
+  ];
+
+  late final AnimationController _pulse = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1100),
+  )..repeat(reverse: true);
+
+  Timer? _timer;
+  int _messageIndex = 0;
+
+  @override
+  void initState() {
+    super.initState();
+    _timer = Timer.periodic(const Duration(milliseconds: 1400), (_) {
+      if (!mounted) return;
+      setState(() => _messageIndex = (_messageIndex + 1) % _messages.length);
+    });
+  }
+
+  @override
+  void dispose() {
+    _timer?.cancel();
+    _pulse.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final textColor = Theme.of(context).textTheme.bodyLarge!.color!;
+    return Container(
+      padding: const EdgeInsets.symmetric(vertical: 18, horizontal: 20),
+      decoration: BoxDecoration(
+        color: Theme.of(context).primaryColor.withOpacity(0.06),
+        borderRadius: BorderRadius.circular(AppRadius.card),
+      ),
+      child: Row(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          RepaintBoundary(
+            child: AnimatedBuilder(
+              animation: _pulse,
+              builder: (context, _) {
+                final scale = 1.0 + _pulse.value * 0.2;
+                return Transform.scale(
+                  scale: scale,
+                  child: Container(
+                    width: 26,
+                    height: 26,
+                    decoration: const BoxDecoration(
+                      gradient: AppColors.primaryGradient,
+                      shape: BoxShape.circle,
+                    ),
+                    child: const Icon(Icons.auto_awesome_rounded,
+                        color: Colors.white, size: 14),
+                  ),
+                );
+              },
+            ),
+          ),
+          const SizedBox(width: 14),
+          AnimatedSwitcher(
+            duration: const Duration(milliseconds: 250),
+            transitionBuilder: (child, anim) => FadeTransition(
+                opacity: anim,
+                child: SlideTransition(
+                    position: Tween<Offset>(
+                            begin: const Offset(0, 0.3), end: Offset.zero)
+                        .animate(anim),
+                    child: child)),
+            child: Text(
+              _messages[_messageIndex],
+              key: ValueKey(_messageIndex),
+              style: AppTextStyles.bodyMedium(textColor)
+                  .copyWith(fontWeight: FontWeight.w600),
+            ),
+          ),
+        ],
       ),
     );
   }

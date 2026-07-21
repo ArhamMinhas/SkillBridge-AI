@@ -87,10 +87,7 @@ class _JobDetailScreenState extends State<JobDetailScreen> {
                   return SingleChildScrollView(
                     padding: const EdgeInsets.all(20),
                     child: ResponsiveCenter(
-                      child: EntranceFade(
-                        child:
-                            _JobDetailBody(job: job, matchFuture: _matchFuture),
-                      ),
+                      child: _JobDetailBody(job: job, matchFuture: _matchFuture),
                     ),
                   );
                 },
@@ -113,133 +110,224 @@ class _JobDetailBody extends StatelessWidget {
     final skills = (job['requiredSkills'] as List?)?.cast<String>() ?? [];
     final applyLink = job['applyLink'] as String?;
 
+    final company = job['company'] as String? ?? '';
+
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        Container(
-          width: double.infinity,
-          padding: const EdgeInsets.all(20),
-          decoration: BoxDecoration(
-            gradient: AppColors.primaryGradient,
-            borderRadius: BorderRadius.circular(AppRadius.card),
-          ),
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Text(job['title'] as String? ?? 'Untitled role',
-                  style: const TextStyle(
-                      color: Colors.white,
-                      fontSize: 22,
-                      fontWeight: FontWeight.w700)),
-              const SizedBox(height: 6),
-              Text(job['company'] as String? ?? '',
-                  style: const TextStyle(color: Colors.white70, fontSize: 15)),
-              const SizedBox(height: 14),
-              Wrap(
-                spacing: 16,
-                runSpacing: 8,
-                children: [
-                  _HeaderMeta(
-                      icon: Icons.location_on_outlined,
-                      label: job['location'] as String? ?? ''),
-                  if (job['jobType'] != null)
-                    _HeaderMeta(
-                        icon: Icons.work_outline_rounded,
-                        label: job['jobType'] as String),
-                  if (job['experienceLevel'] != null)
-                    _HeaderMeta(
-                        icon: Icons.trending_up_rounded,
-                        label: job['experienceLevel'] as String),
-                ],
-              ),
-            ],
+        EntranceFade(
+          child: Container(
+            width: double.infinity,
+            padding: const EdgeInsets.all(20),
+            decoration: BoxDecoration(
+              gradient: AppColors.primaryGradient,
+              borderRadius: BorderRadius.circular(AppRadius.card),
+              boxShadow: AppShadows.glow(AppColors.primaryDark, opacity: 0.25),
+            ),
+            child: Row(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                _CompanyBadge(company: company),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Text(job['title'] as String? ?? 'Untitled role',
+                          style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 22,
+                              fontWeight: FontWeight.w700)),
+                      const SizedBox(height: 6),
+                      Text(company,
+                          style: const TextStyle(
+                              color: Colors.white70, fontSize: 15)),
+                      const SizedBox(height: 14),
+                      Wrap(
+                        spacing: 16,
+                        runSpacing: 8,
+                        children: [
+                          _HeaderMeta(
+                              icon: Icons.location_on_outlined,
+                              label: job['location'] as String? ?? ''),
+                          if (job['jobType'] != null)
+                            _HeaderMeta(
+                                icon: Icons.work_outline_rounded,
+                                label: job['jobType'] as String),
+                          if (job['experienceLevel'] != null)
+                            _HeaderMeta(
+                                icon: Icons.trending_up_rounded,
+                                label: job['experienceLevel'] as String),
+                        ],
+                      ),
+                    ],
+                  ),
+                ),
+              ],
+            ),
           ),
         ),
         const SizedBox(height: 24),
-        Text('Match Score', style: AppTextStyles.heading2(textColor)),
+        EntranceFade(
+          delay: const Duration(milliseconds: 100),
+          child: Text('Match Score', style: AppTextStyles.heading2(textColor)),
+        ),
         const SizedBox(height: 12),
         if (matchFuture != null)
-          FutureBuilder<Map<String, dynamic>>(
-            future: matchFuture,
-            builder: (context, snapshot) {
-              if (snapshot.connectionState == ConnectionState.waiting) {
-                return const AppShimmer(
-                    child: ShimmerBlock(height: 60, borderRadius: 12));
-              }
-              if (snapshot.hasError) {
-                final error = snapshot.error;
-                if (error is ApiException &&
-                    isFeaturePending(error.statusCode)) {
-                  return const AiComingSoon(feature: 'Job match scoring');
+          EntranceFade(
+            delay: const Duration(milliseconds: 140),
+            child: FutureBuilder<Map<String, dynamic>>(
+              future: matchFuture,
+              builder: (context, snapshot) {
+                if (snapshot.connectionState == ConnectionState.waiting) {
+                  return const AppShimmer(
+                      child: ShimmerBlock(height: 60, borderRadius: 12));
                 }
-                return Text(
-                    error is ApiException ? error.message : 'Unavailable',
-                    style: AppTextStyles.bodyMedium(muted));
-              }
-              final score = (snapshot.data?['matchScore'] as num?)?.toInt();
-              if (score == null) {
-                return Text('Match data unavailable',
-                    style: AppTextStyles.bodyMedium(muted));
-              }
-              return Row(
-                children: [
-                  Expanded(
-                    child: ClipRRect(
-                      borderRadius: BorderRadius.circular(8),
-                      child: LinearProgressIndicator(
-                        value: score / 100,
-                        minHeight: 10,
-                        backgroundColor: Theme.of(context).dividerColor,
-                        valueColor: AlwaysStoppedAnimation(
-                            Theme.of(context).primaryColor),
+                if (snapshot.hasError) {
+                  final error = snapshot.error;
+                  if (error is ApiException &&
+                      isFeaturePending(error.statusCode)) {
+                    return const AiComingSoon(feature: 'Job match scoring');
+                  }
+                  return Text(
+                      error is ApiException ? error.message : 'Unavailable',
+                      style: AppTextStyles.bodyMedium(muted));
+                }
+                final score = (snapshot.data?['matchScore'] as num?)?.toInt();
+                if (score == null) {
+                  return Text('Match data unavailable',
+                      style: AppTextStyles.bodyMedium(muted));
+                }
+                final color = score >= 75
+                    ? AppColors.successDark
+                    : score >= 50
+                        ? AppColors.warningDark
+                        : AppColors.errorDark;
+                return TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0, end: score / 100),
+                  duration: const Duration(milliseconds: 800),
+                  curve: Curves.easeOutCubic,
+                  builder: (context, value, _) => Row(
+                    children: [
+                      Expanded(
+                        child: ClipRRect(
+                          borderRadius: BorderRadius.circular(8),
+                          child: LinearProgressIndicator(
+                            value: value,
+                            minHeight: 10,
+                            backgroundColor: Theme.of(context).dividerColor,
+                            valueColor: AlwaysStoppedAnimation(color),
+                          ),
+                        ),
                       ),
-                    ),
+                      const SizedBox(width: 12),
+                      Text('${(value * 100).round()}%',
+                          style: AppTextStyles.heading2(color)),
+                    ],
                   ),
-                  const SizedBox(width: 12),
-                  Text('$score%', style: AppTextStyles.heading2(textColor)),
-                ],
-              );
-            },
+                );
+              },
+            ),
           ),
         const SizedBox(height: 24),
-        Text('Description', style: AppTextStyles.heading2(textColor)),
+        EntranceFade(
+          delay: const Duration(milliseconds: 180),
+          child: Text('Description', style: AppTextStyles.heading2(textColor)),
+        ),
         const SizedBox(height: 10),
-        Text(job['description'] as String? ?? 'No description provided.',
-            style: AppTextStyles.bodyMedium(textColor).copyWith(height: 1.5)),
+        EntranceFade(
+          delay: const Duration(milliseconds: 200),
+          child: Text(job['description'] as String? ?? 'No description provided.',
+              style: AppTextStyles.bodyMedium(textColor).copyWith(height: 1.5)),
+        ),
         if (skills.isNotEmpty) ...[
           const SizedBox(height: 24),
-          Text('Required Skills', style: AppTextStyles.heading2(textColor)),
+          EntranceFade(
+            delay: const Duration(milliseconds: 240),
+            child:
+                Text('Required Skills', style: AppTextStyles.heading2(textColor)),
+          ),
           const SizedBox(height: 12),
           Wrap(
             spacing: 8,
             runSpacing: 8,
-            children: skills
-                .map((s) => Chip(
-                      label: Text(s),
-                      backgroundColor:
-                          Theme.of(context).primaryColor.withOpacity(0.1),
-                      side: BorderSide.none,
-                    ))
-                .toList(),
+            children: [
+              for (var i = 0; i < skills.length; i++)
+                _AnimatedSkillChip(label: skills[i], index: i),
+            ],
           ),
         ],
         const SizedBox(height: 32),
         if (applyLink != null && applyLink.isNotEmpty)
-          CustomButton(
-            label: 'Apply Now',
-            icon: Icons.open_in_new_rounded,
-            onPressed: () async {
-              final uri = Uri.tryParse(applyLink);
-              if (uri == null) return;
-              if (await canLaunchUrl(uri)) {
-                await launchUrl(uri, mode: LaunchMode.externalApplication);
-              } else if (context.mounted) {
-                FeedbackManager.error(context, 'Couldn\'t open the apply link');
-              }
-            },
+          EntranceFade(
+            delay: const Duration(milliseconds: 300),
+            child: CustomButton(
+              label: 'Apply Now',
+              icon: Icons.open_in_new_rounded,
+              onPressed: () async {
+                final uri = Uri.tryParse(applyLink);
+                if (uri == null) return;
+                if (await canLaunchUrl(uri)) {
+                  await launchUrl(uri, mode: LaunchMode.externalApplication);
+                } else if (context.mounted) {
+                  FeedbackManager.error(
+                      context, 'Couldn\'t open the apply link');
+                }
+              },
+            ),
           ),
         const SizedBox(height: 20),
       ],
+    );
+  }
+}
+
+/// No company logo URL exists in the `jobs` schema — this generates a
+/// consistent-looking badge from the company's initial instead of leaving
+/// an empty slot or a generic placeholder icon.
+class _CompanyBadge extends StatelessWidget {
+  final String company;
+  const _CompanyBadge({required this.company});
+
+  @override
+  Widget build(BuildContext context) {
+    final initial = company.trim().isEmpty ? '?' : company.trim()[0].toUpperCase();
+    return Container(
+      width: 52,
+      height: 52,
+      decoration: BoxDecoration(
+        color: Colors.white.withOpacity(0.18),
+        shape: BoxShape.circle,
+        border: Border.all(color: Colors.white.withOpacity(0.4), width: 1.5),
+      ),
+      alignment: Alignment.center,
+      child: Text(initial,
+          style: const TextStyle(
+              color: Colors.white, fontSize: 22, fontWeight: FontWeight.w700)),
+    );
+  }
+}
+
+class _AnimatedSkillChip extends StatelessWidget {
+  final String label;
+  final int index;
+  const _AnimatedSkillChip({required this.label, required this.index});
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: Duration(milliseconds: 260 + index * 40),
+      curve: Curves.easeOutBack,
+      builder: (context, value, child) => Opacity(
+        opacity: value.clamp(0.0, 1.0),
+        child: Transform.scale(scale: value.clamp(0.0, 1.2), child: child),
+      ),
+      child: Chip(
+        label: Text(label),
+        backgroundColor: Theme.of(context).primaryColor.withOpacity(0.1),
+        side: BorderSide.none,
+      ),
     );
   }
 }

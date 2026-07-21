@@ -7,6 +7,7 @@ import '../../../../app/config/theme.dart';
 import '../../../../app/utils/responsive.dart';
 import '../../../../core/services/auth_service.dart';
 import '../../../../core/services/notification_service.dart';
+import '../../../../core/shared_widgets/animated_tap_scale.dart';
 import '../../../../core/shared_widgets/empty_state.dart';
 import '../../../../core/shared_widgets/entrance_fade.dart';
 import '../../../../core/shared_widgets/shimmer_loader.dart';
@@ -180,63 +181,101 @@ class _NotificationTile extends StatelessWidget {
     final gradient = _categoryGradients[category] ?? AppColors.primaryGradient;
     final icon = _categoryIcons[category] ?? Icons.notifications_rounded;
 
-    return Material(
-      color: isRead
-          ? Theme.of(context).cardColor
-          : Theme.of(context).primaryColor.withOpacity(isDark ? 0.12 : 0.06),
+    return AnimatedTapScale(
+      onTap: onTap,
       borderRadius: BorderRadius.circular(AppRadius.card),
-      child: InkWell(
-        onTap: onTap,
-        borderRadius: BorderRadius.circular(AppRadius.card),
-        child: Container(
-          padding: const EdgeInsets.all(14),
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(AppRadius.card),
-            border: Border.all(color: Theme.of(context).dividerColor),
-          ),
-          child: Row(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-              Container(
-                width: 42,
-                height: 42,
-                decoration:
-                    BoxDecoration(gradient: gradient, shape: BoxShape.circle),
-                child: Icon(icon, color: Colors.white, size: 20),
-              ),
-              const SizedBox(width: 12),
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(title,
-                        style: AppTextStyles.bodyLarge(textColor)
-                            .copyWith(fontWeight: FontWeight.w600)),
-                    const SizedBox(height: 4),
-                    Text(body,
-                        style: AppTextStyles.bodyMedium(
-                            Theme.of(context).hintColor),
-                        maxLines: 2,
-                        overflow: TextOverflow.ellipsis),
-                    const SizedBox(height: 6),
-                    Text(_timeAgo(createdAt),
-                        style:
-                            AppTextStyles.caption(Theme.of(context).hintColor)),
-                  ],
-                ),
-              ),
-              if (!isRead)
-                Container(
-                  width: 8,
-                  height: 8,
-                  margin: const EdgeInsets.only(top: 4, left: 6),
-                  decoration: BoxDecoration(
-                      color: Theme.of(context).primaryColor,
-                      shape: BoxShape.circle),
-                ),
-            ],
-          ),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 250),
+        curve: Curves.easeOutCubic,
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: isRead
+              ? Theme.of(context).cardColor
+              : Theme.of(context).primaryColor.withOpacity(isDark ? 0.12 : 0.06),
+          borderRadius: BorderRadius.circular(AppRadius.card),
+          boxShadow: AppShadows.soft(Theme.of(context).brightness),
         ),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Container(
+              width: 42,
+              height: 42,
+              decoration:
+                  BoxDecoration(gradient: gradient, shape: BoxShape.circle),
+              child: Icon(icon, color: Colors.white, size: 20),
+            ),
+            const SizedBox(width: 12),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(title,
+                      style: AppTextStyles.bodyLarge(textColor)
+                          .copyWith(fontWeight: FontWeight.w600)),
+                  const SizedBox(height: 4),
+                  Text(body,
+                      style: AppTextStyles.bodyMedium(
+                          Theme.of(context).hintColor),
+                      maxLines: 2,
+                      overflow: TextOverflow.ellipsis),
+                  const SizedBox(height: 6),
+                  Text(_timeAgo(createdAt),
+                      style:
+                          AppTextStyles.caption(Theme.of(context).hintColor)),
+                ],
+              ),
+            ),
+            if (!isRead) const _PulsingUnreadDot(),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _PulsingUnreadDot extends StatefulWidget {
+  const _PulsingUnreadDot();
+
+  @override
+  State<_PulsingUnreadDot> createState() => _PulsingUnreadDotState();
+}
+
+class _PulsingUnreadDotState extends State<_PulsingUnreadDot>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _controller = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 1400),
+  )..repeat(reverse: true);
+
+  @override
+  void dispose() {
+    _controller.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final primary = Theme.of(context).primaryColor;
+    return RepaintBoundary(
+      child: AnimatedBuilder(
+        animation: _controller,
+        builder: (context, _) {
+          final scale = 1.0 + _controller.value * 0.35;
+          return Padding(
+            padding: const EdgeInsets.only(top: 4, left: 6),
+            child: Transform.scale(
+              scale: scale,
+              child: Container(
+                width: 8,
+                height: 8,
+                decoration: BoxDecoration(
+                    color: primary.withOpacity(1 - _controller.value * 0.4),
+                    shape: BoxShape.circle),
+              ),
+            ),
+          );
+        },
       ),
     );
   }

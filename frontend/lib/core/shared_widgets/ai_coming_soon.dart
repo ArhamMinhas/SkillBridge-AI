@@ -29,3 +29,8 @@ class AiComingSoon extends StatelessWidget {
 /// backend uses for AI/ML endpoints that are routed and rate-limited but
 /// whose model logic hasn't landed yet.
 bool isFeaturePending(int? statusCode) => statusCode == 501;
+
+/// True when [statusCode] is 503 (Service Unavailable) — the AI endpoint is
+/// implemented but the upstream provider (Gemini/OpenAI) has no API key
+/// configured yet, or is temporarily down.
+bool isProviderUnavailable(int? statusCode) => statusCode == 503;

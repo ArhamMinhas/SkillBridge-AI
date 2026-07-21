@@ -24,17 +24,26 @@ docker-compose.yml
 
 ## Current status
 
-Fully wired and working: Firebase ID token verification, role-based admin
-access, user profile CRUD, job listing/filtering, admin CRUD for
-jobs/skills/career roadmaps, admin analytics, Stripe subscription
-create/cancel + webhook, and the `skill-score` data-science formula.
+Fully wired and working: Firebase ID token verification (auto-creates a
+baseline `users/{uid}` Firestore doc on a user's first authenticated
+request, rather than relying on the client finishing Profile Setup first),
+role-based admin access, user profile CRUD, job listing/filtering, admin
+CRUD for jobs/skills/career roadmaps, admin analytics, Stripe subscription
+create/cancel + webhook, the `skill-score` data-science formula, real
+`GET /users/dashboard-stats` (ATS score from the latest resume report,
+job-match count from a skill-overlap scan over `jobs` — a placeholder
+heuristic pending the real Phase 8 engine, not hardcoded zeros), the AI
+chatbot mentor (`app/ai/chatbot.py`), and the AI resume analyzer
+(`app/ai/resume_analyzer.py` — PDF text extraction, ATS scoring via
+Gemini/OpenAI, free-tier limit of 3 analyses, Firestore persistence). AI
+calls go through `app/ai/providers.py`, which uses the `google-genai` SDK
+(not the EOL `google-generativeai`) and `gemini-flash-latest`.
 
 Routes still returning `501 Not Implemented` (their signatures, request/response
 schemas, and auth/rate-limit wiring are in place — only the model logic in
-`app/ai/` and `app/ml/` is pending): resume analysis, career roadmap
-generation, interview questions, mock interview feedback, chatbot, job-match
-scoring, weak-skill detection, career path / learning resource
-recommendation, progress prediction.
+`app/ai/` and `app/ml/` is pending): career roadmap generation, interview
+questions, mock interview feedback, job-match scoring, weak-skill detection,
+career path / learning resource recommendation, progress prediction.
 
 ## Local setup (without Docker)
 

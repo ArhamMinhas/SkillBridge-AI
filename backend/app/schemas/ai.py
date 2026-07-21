@@ -1,6 +1,6 @@
 from typing import List, Optional
 
-from pydantic import BaseModel
+from pydantic import BaseModel, Field
 
 
 class ResumeAnalysisResult(BaseModel):
@@ -27,5 +27,10 @@ class MockInterviewAnswerRequest(BaseModel):
 
 
 class ChatbotMessageRequest(BaseModel):
-    message: str
+    message: str = Field(..., min_length=1, max_length=4000)
     conversationId: Optional[str] = None
+
+
+class ChatbotMessageResponse(BaseModel):
+    reply: str
+    conversationId: str

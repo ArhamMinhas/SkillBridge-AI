@@ -185,26 +185,41 @@ class _StatCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final numericValue = int.tryParse(value);
     return Container(
       padding: const EdgeInsets.symmetric(vertical: 16, horizontal: 10),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(AppRadius.card),
-        border: Border.all(color: Theme.of(context).dividerColor),
+        boxShadow: AppShadows.soft(Theme.of(context).brightness),
       ),
       child: Column(
         children: [
           Container(
             width: 36,
             height: 36,
-            decoration:
-                BoxDecoration(gradient: gradient, shape: BoxShape.circle),
+            decoration: BoxDecoration(
+              gradient: gradient,
+              shape: BoxShape.circle,
+              boxShadow: AppShadows.glow(
+                  (gradient as LinearGradient).colors.first,
+                  opacity: 0.3),
+            ),
             child: Icon(icon, color: Colors.white, size: 18),
           ),
           const SizedBox(height: 10),
-          Text(value,
-              style: AppTextStyles.heading1(
-                  Theme.of(context).textTheme.bodyLarge!.color!)),
+          numericValue == null
+              ? Text(value,
+                  style: AppTextStyles.heading1(
+                      Theme.of(context).textTheme.bodyLarge!.color!))
+              : TweenAnimationBuilder<double>(
+                  tween: Tween(begin: 0, end: numericValue.toDouble()),
+                  duration: const Duration(milliseconds: 800),
+                  curve: Curves.easeOutCubic,
+                  builder: (context, count, _) => Text('${count.round()}',
+                      style: AppTextStyles.heading1(
+                          Theme.of(context).textTheme.bodyLarge!.color!)),
+                ),
           const SizedBox(height: 2),
           Text(label,
               style: AppTextStyles.caption(Theme.of(context).hintColor),
@@ -234,7 +249,7 @@ class _UserTile extends StatelessWidget {
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(AppRadius.card),
-        border: Border.all(color: Theme.of(context).dividerColor),
+        boxShadow: AppShadows.soft(Theme.of(context).brightness),
       ),
       child: Row(
         children: [

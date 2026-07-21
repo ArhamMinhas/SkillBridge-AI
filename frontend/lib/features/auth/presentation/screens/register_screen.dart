@@ -8,8 +8,10 @@ import '../../../../app/config/theme.dart';
 import '../../../../app/utils/responsive.dart';
 import '../../../../app/utils/validators.dart';
 import '../../../../core/shared_widgets/animated_toast.dart';
+import '../../../../core/shared_widgets/app_logo_mark.dart';
 import '../../../../core/shared_widgets/custom_button.dart';
 import '../../../../core/shared_widgets/entrance_fade.dart';
+import '../../../../core/shared_widgets/floating_ai_elements.dart';
 import '../../../../core/shared_widgets/glass_card.dart';
 import '../../../../core/shared_widgets/mesh_gradient_background.dart';
 import '../../../../core/shared_widgets/shake_animation.dart';
@@ -115,118 +117,129 @@ class _RegisterScreenState extends State<RegisterScreen> {
             padding: const EdgeInsets.symmetric(
                 horizontal: AppSpacing.xxl, vertical: AppSpacing.xl),
             child: ResponsiveCenter(
-              child: EntranceFade(
-                child: ShakeAnimation(
-                  key: _shakeKey,
-                  child: GlassCard(
-                    brightness: Brightness.dark,
-                    child: Theme(
-                      data: AppTheme.dark,
-                      child: Form(
-                        key: _formKey,
-                        child: Column(
-                          crossAxisAlignment: CrossAxisAlignment.start,
-                          children: [
-                            Text('Join SkillBridge AI',
-                                style: AppTextStyles.display1(Colors.white)),
-                            const SizedBox(height: 8),
-                            Text(
-                              'Create an account to start your AI-powered '
-                              'career journey',
-                              style: AppTextStyles.bodyMedium(
-                                  Colors.white.withOpacity(0.65)),
-                            ),
-                            const SizedBox(height: AppSpacing.xxl),
-                            TextFormField(
-                              controller: _nameController,
-                              autofillHints: const [AutofillHints.name],
-                              style: const TextStyle(color: Colors.white),
-                              decoration: const InputDecoration(
-                                labelText: 'Full Name',
-                                prefixIcon: Icon(Icons.person_outline_rounded),
-                              ),
-                              validator: (v) =>
-                                  Validators.required(v, label: 'Name'),
-                            ),
-                            const SizedBox(height: AppSpacing.xl),
-                            TextFormField(
-                              controller: _emailController,
-                              keyboardType: TextInputType.emailAddress,
-                              autofillHints: const [AutofillHints.email],
-                              style: const TextStyle(color: Colors.white),
-                              decoration: const InputDecoration(
-                                labelText: 'Email',
-                                prefixIcon: Icon(Icons.mail_outline_rounded),
-                              ),
-                              validator: Validators.email,
-                            ),
-                            const SizedBox(height: AppSpacing.xl),
-                            TextFormField(
-                              controller: _passwordController,
-                              obscureText: _obscurePassword,
-                              style: const TextStyle(color: Colors.white),
-                              decoration: InputDecoration(
-                                labelText: 'Password',
-                                prefixIcon:
-                                    const Icon(Icons.lock_outline_rounded),
-                                suffixIcon: IconButton(
-                                  icon: Icon(_obscurePassword
-                                      ? Icons.visibility_outlined
-                                      : Icons.visibility_off_outlined),
-                                  onPressed: () => setState(() =>
-                                      _obscurePassword = !_obscurePassword),
+              child: Column(
+                children: [
+                  const FloatingAiElements(child: AppLogoMark(size: 56)),
+                  const SizedBox(height: AppSpacing.md),
+                  EntranceFade(
+                    child: ShakeAnimation(
+                      key: _shakeKey,
+                      child: GlassCard(
+                        brightness: Brightness.dark,
+                        child: Theme(
+                          data: AppTheme.dark,
+                          child: Form(
+                            key: _formKey,
+                            child: Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Text('Join SkillBridge AI',
+                                    style:
+                                        AppTextStyles.display1(Colors.white)),
+                                const SizedBox(height: 8),
+                                Text(
+                                  'Create an account to start your AI-powered '
+                                  'career journey',
+                                  style: AppTextStyles.bodyMedium(
+                                      Colors.white.withOpacity(0.65)),
                                 ),
-                              ),
-                              validator: Validators.password,
-                            ),
-                            if (_passwordController.text.isNotEmpty) ...[
-                              const SizedBox(height: 10),
-                              _PasswordStrengthBar(strength: _passwordStrength),
-                            ],
-                            const SizedBox(height: AppSpacing.xl),
-                            TextFormField(
-                              controller: _confirmPasswordController,
-                              obscureText: _obscureConfirmPassword,
-                              style: const TextStyle(color: Colors.white),
-                              decoration: InputDecoration(
-                                labelText: 'Confirm Password',
-                                prefixIcon:
-                                    const Icon(Icons.lock_outline_rounded),
-                                suffixIcon: IconButton(
-                                  icon: Icon(_obscureConfirmPassword
-                                      ? Icons.visibility_outlined
-                                      : Icons.visibility_off_outlined),
-                                  onPressed: () => setState(() =>
-                                      _obscureConfirmPassword =
-                                          !_obscureConfirmPassword),
+                                const SizedBox(height: AppSpacing.xxl),
+                                TextFormField(
+                                  controller: _nameController,
+                                  autofillHints: const [AutofillHints.name],
+                                  style: const TextStyle(color: Colors.white),
+                                  decoration: const InputDecoration(
+                                    labelText: 'Full Name',
+                                    prefixIcon:
+                                        Icon(Icons.person_outline_rounded),
+                                  ),
+                                  validator: (v) =>
+                                      Validators.required(v, label: 'Name'),
                                 ),
-                              ),
-                              validator: (v) => Validators.confirmPassword(
-                                  v, _passwordController.text),
+                                const SizedBox(height: AppSpacing.xl),
+                                TextFormField(
+                                  controller: _emailController,
+                                  keyboardType: TextInputType.emailAddress,
+                                  autofillHints: const [AutofillHints.email],
+                                  style: const TextStyle(color: Colors.white),
+                                  decoration: const InputDecoration(
+                                    labelText: 'Email',
+                                    prefixIcon:
+                                        Icon(Icons.mail_outline_rounded),
+                                  ),
+                                  validator: Validators.email,
+                                ),
+                                const SizedBox(height: AppSpacing.xl),
+                                TextFormField(
+                                  controller: _passwordController,
+                                  obscureText: _obscurePassword,
+                                  style: const TextStyle(color: Colors.white),
+                                  decoration: InputDecoration(
+                                    labelText: 'Password',
+                                    prefixIcon:
+                                        const Icon(Icons.lock_outline_rounded),
+                                    suffixIcon: IconButton(
+                                      icon: Icon(_obscurePassword
+                                          ? Icons.visibility_outlined
+                                          : Icons.visibility_off_outlined),
+                                      onPressed: () => setState(() =>
+                                          _obscurePassword = !_obscurePassword),
+                                    ),
+                                  ),
+                                  validator: Validators.password,
+                                ),
+                                if (_passwordController.text.isNotEmpty) ...[
+                                  const SizedBox(height: 10),
+                                  _PasswordStrengthBar(
+                                      strength: _passwordStrength),
+                                ],
+                                const SizedBox(height: AppSpacing.xl),
+                                TextFormField(
+                                  controller: _confirmPasswordController,
+                                  obscureText: _obscureConfirmPassword,
+                                  style: const TextStyle(color: Colors.white),
+                                  decoration: InputDecoration(
+                                    labelText: 'Confirm Password',
+                                    prefixIcon:
+                                        const Icon(Icons.lock_outline_rounded),
+                                    suffixIcon: IconButton(
+                                      icon: Icon(_obscureConfirmPassword
+                                          ? Icons.visibility_outlined
+                                          : Icons.visibility_off_outlined),
+                                      onPressed: () => setState(() =>
+                                          _obscureConfirmPassword =
+                                              !_obscureConfirmPassword),
+                                    ),
+                                  ),
+                                  validator: (v) => Validators.confirmPassword(
+                                      v, _passwordController.text),
+                                ),
+                                const SizedBox(height: AppSpacing.xxl),
+                                CustomButton(
+                                  label: 'Create Account',
+                                  isLoading: _isLoading,
+                                  onPressed:
+                                      _isLoading ? null : _handleRegister,
+                                ),
+                                const SizedBox(height: AppSpacing.xl),
+                                Center(
+                                  child: TextButton(
+                                    onPressed: () => context.pop(),
+                                    style: TextButton.styleFrom(
+                                        foregroundColor:
+                                            Colors.white.withOpacity(0.85)),
+                                    child: const Text(
+                                        'Already have an account? Login'),
+                                  ),
+                                ),
+                              ],
                             ),
-                            const SizedBox(height: AppSpacing.xxl),
-                            CustomButton(
-                              label: 'Create Account',
-                              isLoading: _isLoading,
-                              onPressed: _isLoading ? null : _handleRegister,
-                            ),
-                            const SizedBox(height: AppSpacing.xl),
-                            Center(
-                              child: TextButton(
-                                onPressed: () => context.pop(),
-                                style: TextButton.styleFrom(
-                                    foregroundColor:
-                                        Colors.white.withOpacity(0.85)),
-                                child: const Text(
-                                    'Already have an account? Login'),
-                              ),
-                            ),
-                          ],
+                          ),
                         ),
                       ),
                     ),
                   ),
-                ),
+                ],
               ),
             ),
           ),

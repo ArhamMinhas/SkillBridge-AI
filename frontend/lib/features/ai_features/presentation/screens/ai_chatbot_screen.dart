@@ -80,7 +80,9 @@ class _AiChatbotScreenState extends State<AiChatbotScreen> {
       if (!mounted) return;
       final reply = isFeaturePending(e.statusCode)
           ? 'My AI brain is still being trained for this — check back soon!'
-          : e.message;
+          : isProviderUnavailable(e.statusCode)
+              ? 'My AI brain is taking a quick break — try again in a moment!'
+              : e.message;
       setState(() => _messages.add(_ChatMessage(reply, isUser: false)));
     } catch (_) {
       if (!mounted) return;

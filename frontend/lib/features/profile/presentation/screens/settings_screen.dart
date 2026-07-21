@@ -1,10 +1,12 @@
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show HapticFeedback;
 import 'package:flutter_riverpod/flutter_riverpod.dart';
 import 'package:go_router/go_router.dart';
 
 import '../../../../app/config/firebase_status.dart';
 import '../../../../app/config/routes.dart';
+import '../../../../app/constants/hero_tags.dart';
 import '../../../../app/config/theme.dart';
 import '../../../../app/providers/theme_mode_provider.dart';
 import '../../../../app/utils/responsive.dart';
@@ -60,99 +62,155 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   @override
   Widget build(BuildContext context) {
     final user = FirebaseStatus.isAvailable ? _authService.currentUser : null;
-    final themeMode = ref.watch(themeModeProvider);
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Settings')),
       body: SafeArea(
-        top: false,
+        bottom: false,
         child: SingleChildScrollView(
-          padding: const EdgeInsets.symmetric(horizontal: 20, vertical: 8),
+          padding: const EdgeInsets.only(bottom: 32),
           child: ResponsiveCenter(
-            child: EntranceFade(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  if (user != null) _AccountCard(user: user),
-                  const SizedBox(height: 24),
-                  const _SectionLabel('Appearance'),
-                  _SettingsGroup(children: [
-                    _ThemeModeSelector(
-                      current: themeMode,
-                      onChanged: (mode) =>
-                          ref.read(themeModeProvider.notifier).state = mode,
-                    ),
-                  ]),
-                  const SizedBox(height: 24),
-                  const _SectionLabel('Notifications'),
-                  _SettingsGroup(children: [
-                    _SwitchTile(
-                      icon: Icons.notifications_active_outlined,
-                      title: 'Push notifications',
-                      subtitle: 'Job matches, roadmap and analysis updates',
-                      value: _pushEnabled,
-                      onChanged: (v) => setState(() => _pushEnabled = v),
-                    ),
-                    const _Divider(),
-                    _SwitchTile(
-                      icon: Icons.mail_outline_rounded,
-                      title: 'Email notifications',
-                      subtitle: 'Weekly digest and important account emails',
-                      value: _emailEnabled,
-                      onChanged: (v) => setState(() => _emailEnabled = v),
-                    ),
-                  ]),
-                  const SizedBox(height: 24),
-                  const _SectionLabel('Account'),
-                  _SettingsGroup(children: [
-                    _NavTile(
-                      icon: Icons.person_outline_rounded,
-                      title: 'Edit profile',
-                      onTap: () => context.push(AppRoutes.profileSetup),
-                    ),
-                    const _Divider(),
-                    _NavTile(
-                      icon: Icons.workspace_premium_outlined,
-                      title: 'Manage subscription',
-                      onTap: () => context.push(AppRoutes.premiumSubscription),
-                    ),
-                    const _Divider(),
-                    _NavTile(
-                      icon: Icons.bar_chart_rounded,
-                      title: 'Progress analytics',
-                      onTap: () => context.push(AppRoutes.progressAnalytics),
-                    ),
-                  ]),
-                  const SizedBox(height: 24),
-                  const _SectionLabel('About'),
-                  _SettingsGroup(children: [
-                    _NavTile(
-                      icon: Icons.privacy_tip_outlined,
-                      title: 'Privacy policy',
-                      onTap: () {},
-                    ),
-                    const _Divider(),
-                    _NavTile(
-                      icon: Icons.description_outlined,
-                      title: 'Terms of service',
-                      onTap: () {},
-                    ),
-                    const _Divider(),
-                    const _InfoTile(title: 'App version', value: '1.0.0'),
-                  ]),
-                  const SizedBox(height: 28),
-                  _SettingsGroup(children: [
-                    _NavTile(
-                      icon: Icons.logout_rounded,
-                      title: 'Log out',
-                      iconColor: AppColors.errorDark,
-                      textColor: AppColors.errorDark,
-                      onTap: _confirmLogout,
-                    ),
-                  ]),
-                  const SizedBox(height: 32),
-                ],
-              ),
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                EntranceFade(
+                  child: user != null
+                      ? _ProfileHero(user: user)
+                      : const SizedBox(height: 12),
+                ),
+                Padding(
+                  padding: const EdgeInsets.symmetric(horizontal: 20),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const SizedBox(height: 24),
+                      const EntranceFade(
+                        delay: Duration(milliseconds: 60),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            _SectionLabel('Appearance'),
+                            _SettingsGroup(children: [_ThemeModeSelector()]),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      EntranceFade(
+                        delay: const Duration(milliseconds: 110),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const _SectionLabel('Notifications'),
+                            _SettingsGroup(children: [
+                              _SwitchTile(
+                                icon: Icons.notifications_active_outlined,
+                                gradient: AppColors.primaryGradient,
+                                title: 'Push notifications',
+                                subtitle:
+                                    'Job matches, roadmap and analysis updates',
+                                value: _pushEnabled,
+                                onChanged: (v) =>
+                                    setState(() => _pushEnabled = v),
+                              ),
+                              const _Divider(),
+                              _SwitchTile(
+                                icon: Icons.mail_outline_rounded,
+                                gradient: AppColors.successGradient,
+                                title: 'Email notifications',
+                                subtitle:
+                                    'Weekly digest and important account emails',
+                                value: _emailEnabled,
+                                onChanged: (v) =>
+                                    setState(() => _emailEnabled = v),
+                              ),
+                            ]),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      EntranceFade(
+                        delay: const Duration(milliseconds: 160),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const _SectionLabel('Account'),
+                            _SettingsGroup(children: [
+                              _NavTile(
+                                icon: Icons.person_outline_rounded,
+                                gradient: AppColors.primaryGradient,
+                                title: 'Edit profile',
+                                onTap: () =>
+                                    context.push(AppRoutes.profileSetup),
+                              ),
+                              const _Divider(),
+                              _NavTile(
+                                icon: Icons.workspace_premium_outlined,
+                                gradient: AppColors.premiumGradient,
+                                title: 'Manage subscription',
+                                onTap: () =>
+                                    context.push(AppRoutes.premiumSubscription),
+                              ),
+                              const _Divider(),
+                              _NavTile(
+                                icon: Icons.bar_chart_rounded,
+                                gradient: AppColors.successGradient,
+                                title: 'Progress analytics',
+                                onTap: () =>
+                                    context.push(AppRoutes.progressAnalytics),
+                              ),
+                            ]),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 24),
+                      EntranceFade(
+                        delay: const Duration(milliseconds: 210),
+                        child: Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            const _SectionLabel('About'),
+                            _SettingsGroup(children: [
+                              _NavTile(
+                                icon: Icons.privacy_tip_outlined,
+                                gradient: AppColors.primaryGradient,
+                                title: 'Privacy policy',
+                                onTap: () {},
+                              ),
+                              const _Divider(),
+                              _NavTile(
+                                icon: Icons.description_outlined,
+                                gradient: AppColors.primaryGradient,
+                                title: 'Terms of service',
+                                onTap: () {},
+                              ),
+                              const _Divider(),
+                              const _InfoTile(
+                                  title: 'App version', value: '1.0.0'),
+                            ]),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 28),
+                      EntranceFade(
+                        delay: const Duration(milliseconds: 260),
+                        child: _SettingsGroup(children: [
+                          _NavTile(
+                            icon: Icons.logout_rounded,
+                            gradient: const LinearGradient(
+                              colors: [
+                                AppColors.errorDark,
+                                AppColors.warningDark
+                              ],
+                            ),
+                            title: 'Log out',
+                            textColor: AppColors.errorDark,
+                            onTap: _confirmLogout,
+                          ),
+                        ]),
+                      ),
+                    ],
+                  ),
+                ),
+              ],
             ),
           ),
         ),
@@ -161,10 +219,13 @@ class _SettingsScreenState extends ConsumerState<SettingsScreen> {
   }
 }
 
-class _AccountCard extends StatelessWidget {
+/// Large profile hero replacing the old flat account-info row — bigger
+/// animated avatar, gradient backdrop, quick "Edit" action, matching the
+/// hero-header treatment used on Home Dashboard for visual consistency
+/// across the app's main tabs.
+class _ProfileHero extends StatelessWidget {
   final User user;
-
-  const _AccountCard({required this.user});
+  const _ProfileHero({required this.user});
 
   @override
   Widget build(BuildContext context) {
@@ -176,40 +237,66 @@ class _AccountCard extends StatelessWidget {
         name == 'Your account' ? 'S' : name.trim()[0].toUpperCase();
 
     return Container(
-      padding: const EdgeInsets.all(16),
-      decoration: BoxDecoration(
+      width: double.infinity,
+      padding: const EdgeInsets.fromLTRB(20, 20, 20, 28),
+      decoration: const BoxDecoration(
         gradient: AppColors.primaryGradient,
-        borderRadius: BorderRadius.circular(AppRadius.card),
+        borderRadius: BorderRadius.only(
+          bottomLeft: Radius.circular(28),
+          bottomRight: Radius.circular(28),
+        ),
       ),
-      child: Row(
+      child: Column(
         children: [
-          CircleAvatar(
-            radius: 26,
-            backgroundColor: Colors.white.withOpacity(0.2),
-            child: Text(initials,
-                style: const TextStyle(
-                    color: Colors.white,
-                    fontSize: 20,
-                    fontWeight: FontWeight.w700)),
+          Row(
+            children: [
+              const Expanded(
+                child: Text('Settings',
+                    style: TextStyle(
+                        color: Colors.white,
+                        fontSize: 22,
+                        fontWeight: FontWeight.w700)),
+              ),
+              IconButton(
+                onPressed: () => context.push(AppRoutes.profileSetup),
+                icon: const Icon(Icons.edit_rounded, color: Colors.white),
+              ),
+            ],
           ),
-          const SizedBox(width: 14),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(name,
+          const SizedBox(height: 8),
+          TweenAnimationBuilder<double>(
+            tween: Tween(begin: 0, end: 1),
+            duration: const Duration(milliseconds: 500),
+            curve: Curves.easeOutBack,
+            builder: (context, value, child) =>
+                Transform.scale(scale: value, child: child),
+            // Same Hero tag as the Home Dashboard's avatar — arriving here
+            // via that avatar morphs smoothly into this larger one instead
+            // of a plain cut between screens.
+            child: Hero(
+              tag: HeroTags.userAvatar,
+              child: CircleAvatar(
+                radius: 40,
+                backgroundColor: AppColors.primaryDark,
+                child: Text(initials,
                     style: const TextStyle(
                         color: Colors.white,
-                        fontSize: 16,
-                        fontWeight: FontWeight.w700),
-                    overflow: TextOverflow.ellipsis),
-                const SizedBox(height: 2),
-                Text(email,
-                    style: const TextStyle(color: Colors.white70, fontSize: 13),
-                    overflow: TextOverflow.ellipsis),
-              ],
+                        fontSize: 30,
+                        fontWeight: FontWeight.w700)),
+              ),
             ),
           ),
+          const SizedBox(height: 12),
+          Text(name,
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 18,
+                  fontWeight: FontWeight.w700),
+              overflow: TextOverflow.ellipsis),
+          const SizedBox(height: 2),
+          Text(email,
+              style: const TextStyle(color: Colors.white70, fontSize: 13),
+              overflow: TextOverflow.ellipsis),
         ],
       ),
     );
@@ -237,18 +324,13 @@ class _SettingsGroup extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final brightness = Theme.of(context).brightness;
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(AppRadius.card),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withOpacity(isDark ? 0.2 : 0.04),
-            blurRadius: 12,
-            offset: const Offset(0, 4),
-          ),
-        ],
+        border: Border.all(color: Theme.of(context).dividerColor),
+        boxShadow: AppShadows.soft(brightness),
       ),
       child: Column(children: children),
     );
@@ -260,28 +342,47 @@ class _Divider extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) =>
-      Divider(height: 1, indent: 56, color: Theme.of(context).dividerColor);
+      Divider(height: 1, indent: 64, color: Theme.of(context).dividerColor);
+}
+
+/// Small gradient-badge icon shared by nav/switch tiles so every settings
+/// row reads as part of the same colored-icon language used on the
+/// Dashboard and Notifications screens, instead of flat single-tone icons.
+class _IconBadge extends StatelessWidget {
+  final IconData icon;
+  final Gradient gradient;
+  const _IconBadge({required this.icon, required this.gradient});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 34,
+      height: 34,
+      decoration: BoxDecoration(gradient: gradient, shape: BoxShape.circle),
+      child: Icon(icon, color: Colors.white, size: 17),
+    );
+  }
 }
 
 class _NavTile extends StatelessWidget {
   final IconData icon;
+  final Gradient gradient;
   final String title;
   final VoidCallback onTap;
-  final Color? iconColor;
   final Color? textColor;
 
   const _NavTile({
     required this.icon,
+    required this.gradient,
     required this.title,
     required this.onTap,
-    this.iconColor,
     this.textColor,
   });
 
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      leading: Icon(icon, color: iconColor ?? Theme.of(context).primaryColor),
+      leading: _IconBadge(icon: icon, gradient: gradient),
       title: Text(title,
           style: TextStyle(
               color: textColor ?? Theme.of(context).textTheme.bodyLarge!.color,
@@ -302,8 +403,9 @@ class _InfoTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return ListTile(
-      leading: Icon(Icons.info_outline_rounded,
-          color: Theme.of(context).primaryColor),
+      leading: const _IconBadge(
+          icon: Icons.info_outline_rounded,
+          gradient: AppColors.primaryGradient),
       title: Text(title,
           style: TextStyle(
               color: Theme.of(context).textTheme.bodyLarge!.color,
@@ -316,6 +418,7 @@ class _InfoTile extends StatelessWidget {
 
 class _SwitchTile extends StatelessWidget {
   final IconData icon;
+  final Gradient gradient;
   final String title;
   final String subtitle;
   final bool value;
@@ -323,6 +426,7 @@ class _SwitchTile extends StatelessWidget {
 
   const _SwitchTile({
     required this.icon,
+    required this.gradient,
     required this.title,
     required this.subtitle,
     required this.value,
@@ -332,7 +436,7 @@ class _SwitchTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return SwitchListTile(
-      secondary: Icon(icon, color: Theme.of(context).primaryColor),
+      secondary: _IconBadge(icon: icon, gradient: gradient),
       title: Text(title,
           style: TextStyle(
               color: Theme.of(context).textTheme.bodyLarge!.color,
@@ -340,17 +444,20 @@ class _SwitchTile extends StatelessWidget {
       subtitle: Text(subtitle,
           style: AppTextStyles.caption(Theme.of(context).hintColor)),
       value: value,
-      onChanged: onChanged,
+      onChanged: (v) {
+        HapticFeedback.selectionClick();
+        onChanged(v);
+      },
       activeColor: Theme.of(context).primaryColor,
     );
   }
 }
 
-class _ThemeModeSelector extends StatelessWidget {
-  final ThemeMode current;
-  final ValueChanged<ThemeMode> onChanged;
-
-  const _ThemeModeSelector({required this.current, required this.onChanged});
+/// Watches [themeModeProvider] itself (instead of receiving it from the
+/// parent) so a theme toggle only rebuilds these three buttons — not the
+/// whole Settings page (profile hero, account tiles, etc.) above it.
+class _ThemeModeSelector extends ConsumerWidget {
+  const _ThemeModeSelector();
 
   static const _options = [
     (mode: ThemeMode.light, icon: Icons.light_mode_rounded, label: 'Light'),
@@ -363,8 +470,8 @@ class _ThemeModeSelector extends StatelessWidget {
   ];
 
   @override
-  Widget build(BuildContext context) {
-    final primary = Theme.of(context).primaryColor;
+  Widget build(BuildContext context, WidgetRef ref) {
+    final current = ref.watch(themeModeProvider);
     final muted = Theme.of(context).hintColor;
 
     return Padding(
@@ -374,28 +481,48 @@ class _ThemeModeSelector extends StatelessWidget {
           final selected = current == option.mode;
           return Expanded(
             child: GestureDetector(
-              onTap: () => onChanged(option.mode),
+              onTap: () {
+                if (selected) return;
+                HapticFeedback.selectionClick();
+                ref.read(themeModeProvider.notifier).state = option.mode;
+              },
               child: AnimatedContainer(
-                duration: const Duration(milliseconds: 200),
+                duration: const Duration(milliseconds: 220),
+                curve: Curves.easeOutCubic,
                 margin: const EdgeInsets.symmetric(horizontal: 4),
                 padding: const EdgeInsets.symmetric(vertical: 12),
                 decoration: BoxDecoration(
-                  color: selected ? primary.withOpacity(0.12) : null,
+                  gradient: selected ? AppColors.primaryGradient : null,
                   borderRadius: BorderRadius.circular(12),
                   border: Border.all(
-                      color:
-                          selected ? primary : Theme.of(context).dividerColor),
+                      color: selected
+                          ? Colors.transparent
+                          : Theme.of(context).dividerColor),
                 ),
                 child: Column(
                   children: [
-                    Icon(option.icon,
-                        color: selected ? primary : muted, size: 22),
+                    AnimatedScale(
+                      scale: selected ? 1.1 : 1.0,
+                      duration: const Duration(milliseconds: 220),
+                      curve: Curves.easeOutCubic,
+                      child: AnimatedSwitcher(
+                        duration: const Duration(milliseconds: 170),
+                        child: Icon(option.icon,
+                            key: ValueKey(selected),
+                            color: selected ? Colors.white : muted,
+                            size: 22),
+                      ),
+                    ),
                     const SizedBox(height: 6),
-                    Text(option.label,
-                        style: TextStyle(
-                            fontSize: 12,
-                            fontWeight: FontWeight.w600,
-                            color: selected ? primary : muted)),
+                    AnimatedDefaultTextStyle(
+                      duration: const Duration(milliseconds: 220),
+                      curve: Curves.easeOutCubic,
+                      style: TextStyle(
+                          fontSize: 12,
+                          fontWeight: FontWeight.w600,
+                          color: selected ? Colors.white : muted),
+                      child: Text(option.label),
+                    ),
                   ],
                 ),
               ),

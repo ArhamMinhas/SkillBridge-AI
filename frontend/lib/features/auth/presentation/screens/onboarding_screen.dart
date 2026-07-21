@@ -100,26 +100,27 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                   },
                 ),
               ),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.center,
-                children: List.generate(
-                  _slides.length,
-                  (index) => AnimatedContainer(
-                    duration: const Duration(milliseconds: 250),
-                    margin: const EdgeInsets.symmetric(horizontal: 4),
-                    width: index == _currentPage ? 24 : 8,
-                    height: 8,
-                    decoration: BoxDecoration(
-                      borderRadius: BorderRadius.circular(4),
-                      gradient: index == _currentPage
-                          ? AppColors.primaryGradient
-                          : null,
-                      color: index == _currentPage
-                          ? null
-                          : Colors.white.withOpacity(0.25),
+              AnimatedBuilder(
+                animation: _pageController,
+                builder: (context, _) {
+                  double page = _currentPage.toDouble();
+                  if (_pageController.hasClients) {
+                    try {
+                      page = _pageController.page ?? page;
+                    } catch (_) {
+                      // Fall back to _currentPage for this frame.
+                    }
+                  }
+                  return Row(
+                    mainAxisAlignment: MainAxisAlignment.center,
+                    children: List.generate(
+                      _slides.length,
+                      (index) => _PageIndicatorDot(
+                          closeness: (1 - (page - index).abs().clamp(0.0, 1.0))
+                              .clamp(0.0, 1.0)),
                     ),
-                  ),
-                ),
+                  );
+                },
               ),
               Padding(
                 padding: const EdgeInsets.all(24),
@@ -138,6 +139,54 @@ class _OnboardingScreenState extends State<OnboardingScreen> {
                 ),
               ),
             ],
+          ),
+        ),
+      ),
+    );
+  }
+}
+
+/// A single page-indicator dot whose width/color/scale are driven directly
+/// by [closeness] (1.0 = this is the current page, 0.0 = a full page away)
+/// rather than snapping between two fixed states after the page settles.
+/// Since the parent rebuilds this every scroll frame from the PageView's
+/// live position, the dot tracks the user's finger continuously — the
+/// "worm" effect premium indicators (Instagram, Airbnb) are known for —
+/// instead of only animating once a swipe fully completes.
+class _PageIndicatorDot extends StatelessWidget {
+  final double closeness;
+  const _PageIndicatorDot({required this.closeness});
+
+  @override
+  Widget build(BuildContext context) {
+    final t = Curves.easeOutCubic.transform(closeness);
+    final width = 8.0 + (16.0 * t);
+    final scale = 1.0 + (0.15 * t);
+    final color = Color.lerp(
+      Colors.white.withOpacity(0.28),
+      AppColors.primaryDark,
+      t,
+    )!;
+
+    return Padding(
+      padding: const EdgeInsets.symmetric(horizontal: 4),
+      child: Transform.scale(
+        scale: scale,
+        child: Container(
+          width: width,
+          height: 8,
+          decoration: BoxDecoration(
+            borderRadius: BorderRadius.circular(4),
+            color: color,
+            boxShadow: t > 0.5
+                ? [
+                    BoxShadow(
+                      color: AppColors.primaryDark.withOpacity(0.5 * t),
+                      blurRadius: 6,
+                      spreadRadius: 0.5,
+                    ),
+                  ]
+                : null,
           ),
         ),
       ),

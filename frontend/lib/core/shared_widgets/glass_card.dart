@@ -32,19 +32,24 @@ class GlassCard extends StatelessWidget {
   Widget build(BuildContext context) {
     final brightness = this.brightness ?? Theme.of(context).brightness;
 
-    return ClipRRect(
-      borderRadius: BorderRadius.circular(borderRadius),
-      child: BackdropFilter(
-        filter: ImageFilter.blur(sigmaX: blurSigma, sigmaY: blurSigma),
-        child: Container(
-          padding: padding,
-          decoration: BoxDecoration(
-            color: AppColors.glassSurface(brightness),
-            borderRadius: BorderRadius.circular(borderRadius),
-            border:
-                Border.all(color: AppColors.glassBorder(brightness), width: 1),
+    // BackdropFilter is one of the most expensive widgets to composite —
+    // RepaintBoundary keeps its layer isolated from the rest of the screen
+    // instead of forcing everything around it to re-rasterize together.
+    return RepaintBoundary(
+      child: ClipRRect(
+        borderRadius: BorderRadius.circular(borderRadius),
+        child: BackdropFilter(
+          filter: ImageFilter.blur(sigmaX: blurSigma, sigmaY: blurSigma),
+          child: Container(
+            padding: padding,
+            decoration: BoxDecoration(
+              color: AppColors.glassSurface(brightness),
+              borderRadius: BorderRadius.circular(borderRadius),
+              border: Border.all(
+                  color: AppColors.glassBorder(brightness), width: 1),
+            ),
+            child: child,
           ),
-          child: child,
         ),
       ),
     );

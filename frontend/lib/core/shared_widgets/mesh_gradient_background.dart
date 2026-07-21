@@ -51,42 +51,49 @@ class _MeshGradientBackgroundState extends State<MeshGradientBackground>
       child: Stack(
         fit: StackFit.expand,
         children: [
-          AnimatedBuilder(
-            animation: _blobController,
-            builder: (context, _) {
-              final t = _blobController.value * 2 * math.pi;
-              return Stack(
-                children: [
-                  _blob(
-                    alignment: Alignment(
-                        math.sin(t) * 0.6, math.cos(t * 0.8) * 0.5 - 0.6),
-                    color: AppColors.primaryDark,
-                    size: 340,
-                    opacity: 0.22,
-                  ),
-                  _blob(
-                    alignment: Alignment(
-                        math.cos(t * 0.7) * 0.7, math.sin(t * 0.6) * 0.6),
-                    color: AppColors.secondaryDark,
-                    size: 300,
-                    opacity: 0.18,
-                  ),
-                  _blob(
-                    alignment: Alignment(math.sin(t * 0.5 + 2) * 0.5,
-                        math.cos(t * 0.9) * 0.5 + 0.7),
-                    color: AppColors.accentDark,
-                    size: 260,
-                    opacity: 0.14,
-                  ),
-                ],
-              );
-            },
+          // Isolated in its own compositing layer: this repaints every
+          // frame forever, and without a boundary that cost leaks into
+          // whatever real content (forms, buttons) is stacked on top.
+          RepaintBoundary(
+            child: AnimatedBuilder(
+              animation: _blobController,
+              builder: (context, _) {
+                final t = _blobController.value * 2 * math.pi;
+                return Stack(
+                  children: [
+                    _blob(
+                      alignment: Alignment(
+                          math.sin(t) * 0.6, math.cos(t * 0.8) * 0.5 - 0.6),
+                      color: AppColors.primaryDark,
+                      size: 340,
+                      opacity: 0.22,
+                    ),
+                    _blob(
+                      alignment: Alignment(
+                          math.cos(t * 0.7) * 0.7, math.sin(t * 0.6) * 0.6),
+                      color: AppColors.secondaryDark,
+                      size: 300,
+                      opacity: 0.18,
+                    ),
+                    _blob(
+                      alignment: Alignment(math.sin(t * 0.5 + 2) * 0.5,
+                          math.cos(t * 0.9) * 0.5 + 0.7),
+                      color: AppColors.accentDark,
+                      size: 260,
+                      opacity: 0.14,
+                    ),
+                  ],
+                );
+              },
+            ),
           ),
-          AnimatedBuilder(
-            animation: _particleController,
-            builder: (context, _) => CustomPaint(
-              painter: _ParticlePainter(progress: _particleController.value),
-              size: Size.infinite,
+          RepaintBoundary(
+            child: AnimatedBuilder(
+              animation: _particleController,
+              builder: (context, _) => CustomPaint(
+                painter: _ParticlePainter(progress: _particleController.value),
+                size: Size.infinite,
+              ),
             ),
           ),
           if (widget.child != null) widget.child!,

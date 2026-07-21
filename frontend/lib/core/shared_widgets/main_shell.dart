@@ -62,38 +62,48 @@ class _FloatingNavBar extends StatelessWidget {
     return SafeArea(
       child: Padding(
         padding: const EdgeInsets.fromLTRB(20, 0, 20, 16),
-        child: ClipRRect(
-          borderRadius: BorderRadius.circular(28),
-          child: BackdropFilter(
-            filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
-            child: Container(
-              height: 68,
-              decoration: BoxDecoration(
-                color: (isDark ? AppColors.surfaceDark : AppColors.surfaceLight)
-                    .withOpacity(0.82),
-                borderRadius: BorderRadius.circular(28),
-                border: Border.all(color: theme.dividerColor, width: 1),
-                boxShadow: [
-                  BoxShadow(
-                    color: Colors.black.withOpacity(isDark ? 0.3 : 0.08),
-                    blurRadius: 20,
-                    offset: const Offset(0, 8),
-                  ),
-                ],
-              ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: List.generate(_navItems.length, (index) {
-                  final item = _navItems[index];
-                  final selected = index == currentIndex;
-                  return Expanded(
-                    child: _NavBarButton(
-                      icon: item.icon,
-                      selected: selected,
-                      onTap: () => onTap(index),
+        // BackdropFilter is one of the most expensive things Flutter can
+        // paint — it re-samples everything behind it every frame. This bar
+        // sits at the bottom of every screen in the app, so without its own
+        // isolated compositing layer, any repaint anywhere above it (a
+        // scrolling list, an unrelated animation) forces the blur to be
+        // recomputed as part of that same pass. Matches the same pattern
+        // already used in GlassCard.
+        child: RepaintBoundary(
+          child: ClipRRect(
+            borderRadius: BorderRadius.circular(28),
+            child: BackdropFilter(
+              filter: ImageFilter.blur(sigmaX: 16, sigmaY: 16),
+              child: Container(
+                height: 68,
+                decoration: BoxDecoration(
+                  color:
+                      (isDark ? AppColors.surfaceDark : AppColors.surfaceLight)
+                          .withOpacity(0.82),
+                  borderRadius: BorderRadius.circular(28),
+                  border: Border.all(color: theme.dividerColor, width: 1),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withOpacity(isDark ? 0.3 : 0.08),
+                      blurRadius: 20,
+                      offset: const Offset(0, 8),
                     ),
-                  );
-                }),
+                  ],
+                ),
+                child: Row(
+                  mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+                  children: List.generate(_navItems.length, (index) {
+                    final item = _navItems[index];
+                    final selected = index == currentIndex;
+                    return Expanded(
+                      child: _NavBarButton(
+                        icon: item.icon,
+                        selected: selected,
+                        onTap: () => onTap(index),
+                      ),
+                    );
+                  }),
+                ),
               ),
             ),
           ),

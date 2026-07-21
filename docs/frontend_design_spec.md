@@ -2,6 +2,12 @@
 
 This document provides a highly detailed, professional, and visually premium design blueprint for the **SkillBridge AI** Flutter application. It serves as a direct implementation guide for developers or AI code-generation agents (such as Claude) to build the complete frontend, including the design system, animations, folder structure, interactive widgets, notifications, and state management integration.
 
+> See the root [`README.md`](../README.md) for the 16-phase project roadmap,
+> the Firebase Spark plan constraints, and the standing Premium UI/UX
+> Redesign Directive that every screen (current and future) is built
+> against — this document covers the concrete design tokens and structure
+> that directive is implemented with.
+
 ---
 
 ## 1. Directory Structure (Feature-First Architecture)

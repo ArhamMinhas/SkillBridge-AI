@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart' show HapticFeedback;
 import 'package:go_router/go_router.dart';
 
 import '../../../../app/config/routes.dart';
@@ -45,6 +46,7 @@ class _SkillAssessmentScreenState extends State<SkillAssessmentScreen> {
       _skillInputController.clear();
       return;
     }
+    HapticFeedback.selectionClick();
     setState(() => _ratings[skill] = 3);
     _skillInputController.clear();
   }
@@ -98,21 +100,26 @@ class _SkillAssessmentScreenState extends State<SkillAssessmentScreen> {
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
           child: ResponsiveCenter(
-            child: EntranceFade(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Text('Rate your skills',
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                EntranceFade(
+                  child: Text('Rate your skills',
                       style: AppTextStyles.heading1(textColor)),
-                  const SizedBox(height: 8),
-                  Text(
+                ),
+                const SizedBox(height: 8),
+                EntranceFade(
+                  delay: const Duration(milliseconds: 80),
+                  child: Text(
                     'Add your skills and rate your proficiency honestly — '
                     'this powers your personalized skill gap report.',
-                    style:
-                        AppTextStyles.bodyMedium(Theme.of(context).hintColor),
+                    style: AppTextStyles.bodyMedium(Theme.of(context).hintColor),
                   ),
-                  const SizedBox(height: 24),
-                  Row(
+                ),
+                const SizedBox(height: 24),
+                EntranceFade(
+                  delay: const Duration(milliseconds: 140),
+                  child: Row(
                     children: [
                       Expanded(
                         child: TextField(
@@ -131,41 +138,89 @@ class _SkillAssessmentScreenState extends State<SkillAssessmentScreen> {
                       ),
                     ],
                   ),
-                  const SizedBox(height: 8),
-                  if (_ratings.isEmpty)
-                    Padding(
-                      padding: const EdgeInsets.symmetric(vertical: 24),
-                      child: Text(
-                        'No skills added yet.',
-                        style: AppTextStyles.bodyMedium(
-                            Theme.of(context).hintColor),
-                      ),
-                    )
-                  else
-                    ..._ratings.keys.map((skill) => _SkillRatingTile(
-                          skill: skill,
-                          rating: _ratings[skill]!,
-                          onChanged: (v) => setState(() => _ratings[skill] = v),
-                          onRemove: () => _removeSkill(skill),
-                        )),
-                  const SizedBox(height: 20),
-                  CustomButton(
+                ),
+                const SizedBox(height: 8),
+                AnimatedSize(
+                  duration: const Duration(milliseconds: 250),
+                  curve: Curves.easeOutCubic,
+                  alignment: Alignment.topCenter,
+                  child: _ratings.isEmpty
+                      ? Padding(
+                          padding: const EdgeInsets.symmetric(vertical: 24),
+                          child: Row(
+                            children: [
+                              Icon(Icons.checklist_rtl_rounded,
+                                  size: 18, color: Theme.of(context).hintColor),
+                              const SizedBox(width: 8),
+                              Text(
+                                'No skills added yet.',
+                                style: AppTextStyles.bodyMedium(
+                                    Theme.of(context).hintColor),
+                              ),
+                            ],
+                          ),
+                        )
+                      : Column(
+                          children: [
+                            for (final skill in _ratings.keys)
+                              KeyedSubtree(
+                                key: ValueKey(skill),
+                                child: _AnimatedTileEntrance(
+                                  child: _SkillRatingTile(
+                                    skill: skill,
+                                    rating: _ratings[skill]!,
+                                    onChanged: (v) =>
+                                        setState(() => _ratings[skill] = v),
+                                    onRemove: () => _removeSkill(skill),
+                                  ),
+                                ),
+                              ),
+                          ],
+                        ),
+                ),
+                const SizedBox(height: 12),
+                EntranceFade(
+                  delay: const Duration(milliseconds: 200),
+                  child: CustomButton(
                     label: 'Get My Skill Gap Report',
                     icon: Icons.auto_awesome_rounded,
                     isLoading: _isSubmitting,
                     onPressed: _isSubmitting ? null : _submit,
                   ),
-                  if (_featurePending) ...[
-                    const SizedBox(height: 32),
-                    AiComingSoon(
-                        feature: 'Skill gap analysis', onRetry: _submit),
-                  ],
+                ),
+                if (_featurePending) ...[
+                  const SizedBox(height: 32),
+                  AiComingSoon(
+                      feature: 'Skill gap analysis', onRetry: _submit),
                 ],
-              ),
+              ],
             ),
           ),
         ),
       ),
+    );
+  }
+}
+
+/// Pop-in entrance for newly-added skill tiles — since it's keyed per-skill
+/// via the parent's `KeyedSubtree`, this only plays once when a tile first
+/// enters the tree, not on every rebuild.
+class _AnimatedTileEntrance extends StatelessWidget {
+  final Widget child;
+  const _AnimatedTileEntrance({required this.child});
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: const Duration(milliseconds: 320),
+      curve: Curves.easeOutBack,
+      builder: (context, value, child) => Opacity(
+        opacity: value.clamp(0.0, 1.0),
+        child: Transform.scale(
+            scale: 0.9 + (0.1 * value.clamp(0.0, 1.0)), child: child),
+      ),
+      child: child,
     );
   }
 }
@@ -194,7 +249,7 @@ class _SkillRatingTile extends StatelessWidget {
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(AppRadius.card),
-        border: Border.all(color: Theme.of(context).dividerColor),
+        boxShadow: AppShadows.soft(Theme.of(context).brightness),
       ),
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
@@ -206,6 +261,8 @@ class _SkillRatingTile extends StatelessWidget {
                     style: AppTextStyles.bodyLarge(textColor)
                         .copyWith(fontWeight: FontWeight.w600)),
               ),
+              _ProficiencyDots(rating: rating),
+              const SizedBox(width: 8),
               Text(_proficiencyLabels[rating - 1],
                   style: AppTextStyles.caption(primary)
                       .copyWith(fontWeight: FontWeight.w700)),
@@ -226,6 +283,33 @@ class _SkillRatingTile extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+class _ProficiencyDots extends StatelessWidget {
+  final int rating;
+  const _ProficiencyDots({required this.rating});
+
+  @override
+  Widget build(BuildContext context) {
+    final primary = Theme.of(context).primaryColor;
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: List.generate(5, (i) {
+        final filled = i < rating;
+        return AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOutCubic,
+          margin: const EdgeInsets.only(left: 2),
+          width: 6,
+          height: 6,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: filled ? primary : primary.withOpacity(0.15),
+          ),
+        );
+      }),
     );
   }
 }

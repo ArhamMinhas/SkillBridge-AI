@@ -53,12 +53,44 @@ Future<void> main() async {
   runApp(const ProviderScope(child: SkillBridgeApp()));
 }
 
-class SkillBridgeApp extends ConsumerWidget {
+class SkillBridgeApp extends ConsumerStatefulWidget {
   const SkillBridgeApp({super.key});
 
   @override
-  Widget build(BuildContext context, WidgetRef ref) {
+  ConsumerState<SkillBridgeApp> createState() => _SkillBridgeAppState();
+}
+
+class _SkillBridgeAppState extends ConsumerState<SkillBridgeApp>
+    with SingleTickerProviderStateMixin {
+  // Flashes a brief scrim over the instant theme swap instead of animating
+  // the real ThemeData across the whole tree. AnimatedTheme was tried first
+  // and interpolates every Color/TextStyle in ThemeData on every frame for
+  // every descendant that reads Theme.of(context) — across this app's full
+  // widget tree (five kept-alive bottom-nav branches via IndexedStack, each
+  // with glass cards / gradients / shadows) that's expensive enough to drop
+  // frames, which is exactly the "laggy toggle" the animation was supposed
+  // to fix. A one-shot opacity flash on a single full-screen Container costs
+  // a tiny fraction of that while still reading as a smooth transition.
+  late final AnimationController _flash = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 260),
+  );
+
+  @override
+  void dispose() {
+    _flash.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
     final themeMode = ref.watch(themeModeProvider);
+    ref.listen(themeModeProvider, (previous, next) {
+      if (previous != null && previous != next) {
+        _flash.forward(from: 0);
+      }
+    });
+
     return MaterialApp.router(
       title: 'SkillBridge AI',
       debugShowCheckedModeBanner: false,
@@ -66,10 +98,12 @@ class SkillBridgeApp extends ConsumerWidget {
       darkTheme: AppTheme.dark,
       themeMode: themeMode,
       // Keeps the status/nav bar icons legible against whichever theme is
-      // active, and cross-fades ThemeData changes instead of the instant,
-      // jarring snap Flutter applies by default when themeMode changes.
+      // active; the flash overlay below masks the instant ThemeData swap
+      // Flutter applies underneath.
       builder: (context, child) {
         final isDark = Theme.of(context).brightness == Brightness.dark;
+        final scrimColor =
+            isDark ? AppColors.backgroundDark : AppColors.backgroundLight;
         return AnnotatedRegion<SystemUiOverlayStyle>(
           value: SystemUiOverlayStyle(
             statusBarColor: Colors.transparent,
@@ -81,11 +115,33 @@ class SkillBridgeApp extends ConsumerWidget {
                 isDark ? Brightness.light : Brightness.dark,
             systemNavigationBarDividerColor: Colors.transparent,
           ),
-          child: AnimatedTheme(
-            data: isDark ? AppTheme.dark : AppTheme.light,
-            duration: const Duration(milliseconds: 350),
-            curve: Curves.easeInOut,
-            child: child!,
+          child: RepaintBoundary(
+            child: Stack(
+              children: [
+                RepaintBoundary(child: child!),
+                IgnorePointer(
+                  child: RepaintBoundary(
+                    child: AnimatedBuilder(
+                      animation: _flash,
+                      builder: (context, _) {
+                        final t = _flash.value;
+                        if (t <= 0 || t >= 1) return const SizedBox.shrink();
+                        // Fast rise, slower fall — reads as a quick flash
+                        // rather than a lingering fade.
+                        final opacity = t < 0.35
+                            ? (t / 0.35)
+                            : (1 - (t - 0.35) / 0.65).clamp(0.0, 1.0);
+                        return Positioned.fill(
+                          child: Container(
+                            color: scrimColor.withOpacity(opacity * 0.85),
+                          ),
+                        );
+                      },
+                    ),
+                  ),
+                ),
+              ],
+            ),
           ),
         );
       },

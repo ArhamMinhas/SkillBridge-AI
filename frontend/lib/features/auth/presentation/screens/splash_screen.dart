@@ -8,6 +8,7 @@ import '../../../../app/config/theme.dart';
 import '../../../../app/utils/responsive.dart';
 import '../../../../core/shared_widgets/app_logo_mark.dart';
 import '../../../../core/shared_widgets/mesh_gradient_background.dart';
+import '../../../../core/shared_widgets/shimmer_text.dart';
 
 class SplashScreen extends StatefulWidget {
   const SplashScreen({super.key});
@@ -105,14 +106,16 @@ class _SplashScreenState extends State<SplashScreen>
                           builder: (context, _) => _PulseRing(
                               progress: _pulse.value,
                               phaseOffset: 0.0,
-                              baseSize: logoSize * 1.35),
+                              baseSize: logoSize * 1.35,
+                              color: AppColors.primaryDark),
                         ),
                         AnimatedBuilder(
                           animation: _pulse,
                           builder: (context, _) => _PulseRing(
                               progress: _pulse.value,
                               phaseOffset: 0.5,
-                              baseSize: logoSize * 1.35),
+                              baseSize: logoSize * 1.35,
+                              color: AppColors.successDark),
                         ),
                         ScaleTransition(
                           scale: _logoScale,
@@ -131,13 +134,9 @@ class _SplashScreenState extends State<SplashScreen>
                         .animate(_titleProgress),
                     child: FadeTransition(
                       opacity: _titleProgress,
-                      child: ShaderMask(
-                        shaderCallback: (bounds) =>
-                            AppColors.primaryGradient.createShader(bounds),
-                        child: Text(
-                          'SkillBridge AI',
-                          style: AppTextStyles.display1(Colors.white),
-                        ),
+                      child: ShimmerText(
+                        text: 'SkillBridge AI',
+                        style: AppTextStyles.display1(Colors.white),
                       ),
                     ),
                   ),
@@ -197,11 +196,14 @@ class _PulseRing extends StatelessWidget {
   final double progress; // 0..1, loops
   final double phaseOffset;
   final double baseSize;
+  final Color color;
 
-  const _PulseRing(
-      {required this.progress,
-      required this.phaseOffset,
-      required this.baseSize});
+  const _PulseRing({
+    required this.progress,
+    required this.phaseOffset,
+    required this.baseSize,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
@@ -218,7 +220,7 @@ class _PulseRing extends StatelessWidget {
           height: baseSize,
           decoration: BoxDecoration(
             shape: BoxShape.circle,
-            border: Border.all(color: AppColors.secondaryDark, width: 1.5),
+            border: Border.all(color: color, width: 1.5),
           ),
         ),
       ),

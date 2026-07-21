@@ -7,7 +7,9 @@ import '../../../../core/network/api_client.dart';
 import '../../../../core/network/api_paths.dart';
 import '../../../../core/network/error_handler.dart';
 import '../../../../core/shared_widgets/ai_coming_soon.dart';
+import '../../../../core/shared_widgets/animated_tap_scale.dart';
 import '../../../../core/shared_widgets/animated_toast.dart';
+import '../../../../core/shared_widgets/empty_state.dart';
 import '../../../../core/shared_widgets/entrance_fade.dart';
 import '../../../../core/shared_widgets/shimmer_loader.dart';
 
@@ -16,6 +18,14 @@ const _typeIcons = {
   'video': Icons.play_circle_rounded,
   'article': Icons.article_rounded,
   'book': Icons.menu_book_rounded,
+};
+
+const _typeGradients = {
+  'course': AppColors.primaryGradient,
+  'video': AppColors.premiumGradient,
+  'article': AppColors.successGradient,
+  'book': LinearGradient(
+      colors: [AppColors.secondaryDark, AppColors.accentDark]),
 };
 
 class LearningResourcesScreen extends StatefulWidget {
@@ -90,18 +100,14 @@ class _LearningResourcesScreenState extends State<LearningResourcesScreen> {
                   return ListView(
                     padding: const EdgeInsets.all(20),
                     children: [
-                      Center(
-                        child: Padding(
-                          padding: const EdgeInsets.only(top: 60),
-                          child: Text(
-                            error is ApiException
-                                ? error.message
-                                : 'Something went wrong',
-                            style: AppTextStyles.bodyMedium(
-                                Theme.of(context).hintColor),
-                            textAlign: TextAlign.center,
-                          ),
-                        ),
+                      EmptyState(
+                        icon: Icons.wifi_off_rounded,
+                        title: 'Couldn\'t load resources',
+                        message: error is ApiException
+                            ? error.message
+                            : 'Something went wrong',
+                        actionLabel: 'Retry',
+                        onAction: _refresh,
                       ),
                     ],
                   );
@@ -140,23 +146,33 @@ class _LearningResourcesScreenState extends State<LearningResourcesScreen> {
   }
 }
 
-class _ResourceCard extends StatelessWidget {
+class _ResourceCard extends StatefulWidget {
   final Map<String, dynamic> resource;
   const _ResourceCard({required this.resource});
 
   @override
+  State<_ResourceCard> createState() => _ResourceCardState();
+}
+
+class _ResourceCardState extends State<_ResourceCard> {
+  bool _hovered = false;
+
+  @override
   Widget build(BuildContext context) {
+    final resource = widget.resource;
     final title = resource['title'] as String? ?? 'Resource';
     final description = resource['description'] as String? ?? '';
     final type = (resource['type'] as String? ?? 'article').toLowerCase();
     final url = resource['url'] as String?;
     final icon = _typeIcons[type] ?? Icons.link_rounded;
+    final gradient = _typeGradients[type] ?? AppColors.primaryGradient;
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final accent = gradient.colors.first;
 
-    return Material(
-      color: Theme.of(context).cardColor,
-      borderRadius: BorderRadius.circular(AppRadius.card),
-      child: InkWell(
+    return MouseRegion(
+      onEnter: (_) => setState(() => _hovered = true),
+      onExit: (_) => setState(() => _hovered = false),
+      child: AnimatedTapScale(
         borderRadius: BorderRadius.circular(AppRadius.card),
         onTap: url == null
             ? null
@@ -169,16 +185,24 @@ class _ResourceCard extends StatelessWidget {
                   FeedbackManager.error(context, 'Couldn\'t open this link');
                 }
               },
-        child: Container(
+        child: AnimatedContainer(
+          duration: const Duration(milliseconds: 200),
+          curve: Curves.easeOutCubic,
+          transform: Matrix4.translationValues(0, _hovered ? -2 : 0, 0),
           padding: const EdgeInsets.all(14),
           decoration: BoxDecoration(
+            color: Theme.of(context).cardColor,
             borderRadius: BorderRadius.circular(AppRadius.card),
-            border: Border.all(color: Theme.of(context).dividerColor),
+            border: Border.all(
+                color: _hovered
+                    ? accent.withOpacity(0.4)
+                    : Theme.of(context).dividerColor),
             boxShadow: [
               BoxShadow(
-                color: Colors.black.withOpacity(isDark ? 0.2 : 0.04),
-                blurRadius: 10,
-                offset: const Offset(0, 3),
+                color: Colors.black
+                    .withOpacity((isDark ? 0.2 : 0.04) + (_hovered ? 0.04 : 0)),
+                blurRadius: _hovered ? 16 : 10,
+                offset: Offset(0, _hovered ? 5 : 3),
               ),
             ],
           ),
@@ -187,10 +211,7 @@ class _ResourceCard extends StatelessWidget {
               Container(
                 width: 42,
                 height: 42,
-                decoration: const BoxDecoration(
-                  gradient: AppColors.primaryGradient,
-                  shape: BoxShape.circle,
-                ),
+                decoration: BoxDecoration(gradient: gradient, shape: BoxShape.circle),
                 child: Icon(icon, color: Colors.white, size: 20),
               ),
               const SizedBox(width: 12),
@@ -198,9 +219,28 @@ class _ResourceCard extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Text(title,
-                        style: AppTextStyles.bodyLarge(
-                            Theme.of(context).textTheme.bodyLarge!.color!)),
+                    Row(
+                      children: [
+                        Flexible(
+                          child: Text(title,
+                              style: AppTextStyles.bodyLarge(
+                                  Theme.of(context).textTheme.bodyLarge!.color!),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis),
+                        ),
+                        const SizedBox(width: 8),
+                        Container(
+                          padding: const EdgeInsets.symmetric(
+                              horizontal: 6, vertical: 2),
+                          decoration: BoxDecoration(
+                            color: accent.withOpacity(0.12),
+                            borderRadius: BorderRadius.circular(AppRadius.pill),
+                          ),
+                          child: Text(type.toUpperCase(),
+                              style: AppTextStyles.overline(accent)),
+                        ),
+                      ],
+                    ),
                     if (description.isNotEmpty) ...[
                       const SizedBox(height: 2),
                       Text(description,
@@ -212,9 +252,11 @@ class _ResourceCard extends StatelessWidget {
                   ],
                 ),
               ),
-              if (url != null)
+              if (url != null) ...[
+                const SizedBox(width: 8),
                 Icon(Icons.open_in_new_rounded,
                     color: Theme.of(context).hintColor, size: 18),
+              ],
             ],
           ),
         ),

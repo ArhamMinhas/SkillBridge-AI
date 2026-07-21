@@ -12,6 +12,7 @@ import '../../../../core/shared_widgets/animated_toast.dart';
 import '../../../../core/shared_widgets/app_logo_mark.dart';
 import '../../../../core/shared_widgets/custom_button.dart';
 import '../../../../core/shared_widgets/entrance_fade.dart';
+import '../../../../core/shared_widgets/floating_ai_elements.dart';
 import '../../../../core/shared_widgets/glass_card.dart';
 import '../../../../core/shared_widgets/google_g_mark.dart';
 import '../../../../core/shared_widgets/mesh_gradient_background.dart';
@@ -118,7 +119,10 @@ class _LoginScreenState extends State<LoginScreen> {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    const Center(child: AppLogoMark(size: 64)),
+                    const Center(
+                      child: FloatingAiElements(
+                          child: AppLogoMark(size: 64)),
+                    ),
                     const SizedBox(height: AppSpacing.xxl),
                     ShakeAnimation(
                       key: _shakeKey,

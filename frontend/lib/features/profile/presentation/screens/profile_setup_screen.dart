@@ -200,6 +200,8 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
+                const _StepHeroIcon(icon: Icons.school_rounded),
+                const SizedBox(height: 16),
                 Text('Personal info', style: AppTextStyles.heading1(textColor)),
                 const SizedBox(height: 8),
                 Text('Tell us about your education and experience',
@@ -256,6 +258,8 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              const _StepHeroIcon(icon: Icons.code_rounded),
+              const SizedBox(height: 16),
               Text('Technical skills',
                   style: AppTextStyles.heading1(textColor)),
               const SizedBox(height: 8),
@@ -320,6 +324,8 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
+              const _StepHeroIcon(icon: Icons.flag_rounded),
+              const SizedBox(height: 16),
               Text('Career goals', style: AppTextStyles.heading1(textColor)),
               const SizedBox(height: 8),
               Text('What role are you aiming for?',
@@ -361,8 +367,38 @@ class _ProfileSetupScreenState extends State<ProfileSetupScreen> {
   }
 }
 
-/// Horizontal step progress indicator — fills left to right as [currentStep]
-/// advances, per docs/frontend_design_spec.md screen 6.
+class _StepHeroIcon extends StatelessWidget {
+  final IconData icon;
+  const _StepHeroIcon({required this.icon});
+
+  @override
+  Widget build(BuildContext context) {
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: const Duration(milliseconds: 450),
+      curve: Curves.easeOutBack,
+      builder: (context, value, child) =>
+          Transform.scale(scale: value, child: child),
+      child: Container(
+        width: 52,
+        height: 52,
+        decoration: BoxDecoration(
+          gradient: AppColors.primaryGradient,
+          shape: BoxShape.circle,
+          boxShadow: AppShadows.glow(AppColors.primaryDark, opacity: 0.3),
+        ),
+        child: Icon(icon, color: Colors.white, size: 24),
+      ),
+    );
+  }
+}
+
+const _kStepLabels = ['Personal', 'Skills', 'Goals'];
+
+/// Numbered step indicator — each node fills/checks in as [currentStep]
+/// advances, connected by a progress-filled line, echoing the same
+/// node+connector motif used on the Career Roadmap timeline for visual
+/// consistency across the app's "sequence of steps" screens.
 class _StepProgressBar extends StatelessWidget {
   final int currentStep;
   final int totalSteps;
@@ -371,22 +407,99 @@ class _StepProgressBar extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final progress = (currentStep + 1) / totalSteps;
+    final primary = Theme.of(context).primaryColor;
     return Padding(
-      padding: const EdgeInsets.symmetric(horizontal: 24, vertical: 12),
-      child: ClipRRect(
-        borderRadius: BorderRadius.circular(4),
-        child: TweenAnimationBuilder<double>(
-          tween: Tween(begin: 0, end: progress),
-          duration: const Duration(milliseconds: 300),
-          builder: (context, value, _) => LinearProgressIndicator(
-            value: value,
-            minHeight: 6,
-            backgroundColor: Theme.of(context).dividerColor,
-            valueColor: AlwaysStoppedAnimation(Theme.of(context).primaryColor),
+      padding: const EdgeInsets.fromLTRB(24, 16, 24, 8),
+      child: Row(
+        children: [
+          for (var i = 0; i < totalSteps; i++) ...[
+            _StepNode(
+              index: i,
+              label: _kStepLabels[i],
+              isDone: i < currentStep,
+              isActive: i == currentStep,
+            ),
+            if (i != totalSteps - 1)
+              Expanded(
+                child: Padding(
+                  padding: const EdgeInsets.only(bottom: 18),
+                  child: TweenAnimationBuilder<double>(
+                    tween: Tween(begin: 0, end: i < currentStep ? 1.0 : 0.0),
+                    duration: const Duration(milliseconds: 300),
+                    curve: Curves.easeOutCubic,
+                    builder: (context, value, _) => Stack(
+                      children: [
+                        Container(height: 2, color: Theme.of(context).dividerColor),
+                        FractionallySizedBox(
+                          widthFactor: value,
+                          child: Container(height: 2, color: primary),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+              ),
+          ],
+        ],
+      ),
+    );
+  }
+}
+
+class _StepNode extends StatelessWidget {
+  final int index;
+  final String label;
+  final bool isDone;
+  final bool isActive;
+
+  const _StepNode({
+    required this.index,
+    required this.label,
+    required this.isDone,
+    required this.isActive,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final primary = Theme.of(context).primaryColor;
+    final filled = isDone || isActive;
+    return Column(
+      children: [
+        AnimatedContainer(
+          duration: const Duration(milliseconds: 250),
+          curve: Curves.easeOutCubic,
+          width: 28,
+          height: 28,
+          decoration: BoxDecoration(
+            gradient: filled ? AppColors.primaryGradient : null,
+            color: filled ? null : Theme.of(context).cardColor,
+            shape: BoxShape.circle,
+            border: Border.all(
+                color: filled ? Colors.transparent : Theme.of(context).dividerColor,
+                width: 1.5),
+            boxShadow: isActive ? AppShadows.glow(primary, opacity: 0.35) : null,
+          ),
+          alignment: Alignment.center,
+          child: AnimatedSwitcher(
+            duration: const Duration(milliseconds: 200),
+            transitionBuilder: (child, anim) => ScaleTransition(
+                scale: anim, child: FadeTransition(opacity: anim, child: child)),
+            child: isDone
+                ? const Icon(Icons.check_rounded,
+                    key: ValueKey('done'), color: Colors.white, size: 14)
+                : Text('${index + 1}',
+                    key: const ValueKey('num'),
+                    style: TextStyle(
+                        color: filled ? Colors.white : Theme.of(context).hintColor,
+                        fontSize: 12,
+                        fontWeight: FontWeight.w700)),
           ),
         ),
-      ),
+        const SizedBox(height: 4),
+        Text(label,
+            style: AppTextStyles.caption(
+                isActive ? primary : Theme.of(context).hintColor)),
+      ],
     );
   }
 }

@@ -61,60 +61,54 @@ class _PremiumSubscriptionScreenState extends State<PremiumSubscriptionScreen> {
         child: SingleChildScrollView(
           padding: const EdgeInsets.all(20),
           child: ResponsiveCenter(
-            child: EntranceFade(
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Container(
-                    width: 72,
-                    height: 72,
-                    decoration: const BoxDecoration(
-                      gradient: AppColors.premiumGradient,
-                      shape: BoxShape.circle,
-                    ),
-                    child: const Icon(Icons.workspace_premium_rounded,
-                        color: Colors.white, size: 36),
-                  ),
-                  const SizedBox(height: 20),
-                  Text('Unlock SkillBridge Pro',
-                      style: AppTextStyles.heading1(textColor)),
-                  const SizedBox(height: 8),
-                  Text(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                const EntranceFade(child: Center(child: _PremiumHeroIcon())),
+                const SizedBox(height: 20),
+                EntranceFade(
+                  delay: const Duration(milliseconds: 80),
+                  child: Text('Unlock SkillBridge Pro',
+                      style: AppTextStyles.heading1(textColor),
+                      textAlign: TextAlign.center),
+                ),
+                const SizedBox(height: 8),
+                EntranceFade(
+                  delay: const Duration(milliseconds: 140),
+                  child: Text(
                     'Get unlimited access to every AI-powered feature and '
                     'accelerate your career growth.',
-                    style:
-                        AppTextStyles.bodyMedium(Theme.of(context).hintColor),
+                    style: AppTextStyles.bodyMedium(Theme.of(context).hintColor),
+                    textAlign: TextAlign.center,
                   ),
-                  const SizedBox(height: 28),
-                  _PlanToggle(
+                ),
+                const SizedBox(height: 28),
+                EntranceFade(
+                  delay: const Duration(milliseconds: 200),
+                  child: _PlanToggle(
                     isYearly: _isYearly,
                     onChanged: (v) => setState(() => _isYearly = v),
                   ),
-                  const SizedBox(height: 28),
-                  ..._features.map((f) => Padding(
-                        padding: const EdgeInsets.only(bottom: 14),
-                        child: Row(
-                          children: [
-                            Container(
-                              width: 24,
-                              height: 24,
-                              decoration: BoxDecoration(
-                                color: AppColors.successDark.withOpacity(0.15),
-                                shape: BoxShape.circle,
-                              ),
-                              child: const Icon(Icons.check_rounded,
-                                  color: AppColors.successDark, size: 16),
-                            ),
-                            const SizedBox(width: 12),
-                            Expanded(
-                                child: Text(f,
-                                    style:
-                                        AppTextStyles.bodyMedium(textColor))),
-                          ],
-                        ),
-                      )),
-                  const SizedBox(height: 20),
-                  CustomButton(
+                ),
+                const SizedBox(height: 24),
+                Container(
+                  padding: const EdgeInsets.all(AppSpacing.lg),
+                  decoration: BoxDecoration(
+                    color: Theme.of(context).cardColor,
+                    borderRadius: BorderRadius.circular(AppRadius.card),
+                    boxShadow: AppShadows.soft(Theme.of(context).brightness),
+                  ),
+                  child: Column(
+                    children: [
+                      for (var i = 0; i < _features.length; i++)
+                        _FeatureRow(text: _features[i], index: i),
+                    ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+                EntranceFade(
+                  delay: const Duration(milliseconds: 320),
+                  child: CustomButton(
                     label: _isYearly
                         ? 'Subscribe — \$89.99/year'
                         : 'Subscribe — \$9.99/month',
@@ -123,17 +117,105 @@ class _PremiumSubscriptionScreenState extends State<PremiumSubscriptionScreen> {
                     isLoading: _isProcessing,
                     onPressed: _isProcessing ? null : _subscribe,
                   ),
-                  const SizedBox(height: 12),
-                  Center(
-                    child: Text(
-                      'Cancel anytime from Settings.',
-                      style: AppTextStyles.caption(Theme.of(context).hintColor),
-                    ),
+                ),
+                const SizedBox(height: 12),
+                Center(
+                  child: Text(
+                    'Cancel anytime from Settings.',
+                    style: AppTextStyles.caption(Theme.of(context).hintColor),
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
           ),
+        ),
+      ),
+    );
+  }
+}
+
+/// Floating, gently glowing premium badge — same visual language as the
+/// other hero icons introduced across this redesign pass (Forgot Password,
+/// Payment Status).
+class _PremiumHeroIcon extends StatefulWidget {
+  const _PremiumHeroIcon();
+
+  @override
+  State<_PremiumHeroIcon> createState() => _PremiumHeroIconState();
+}
+
+class _PremiumHeroIconState extends State<_PremiumHeroIcon>
+    with SingleTickerProviderStateMixin {
+  late final AnimationController _float = AnimationController(
+    vsync: this,
+    duration: const Duration(milliseconds: 2600),
+  )..repeat(reverse: true);
+
+  @override
+  void dispose() {
+    _float.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    return RepaintBoundary(
+      child: AnimatedBuilder(
+        animation: _float,
+        builder: (context, child) {
+          final bob = (_float.value - 0.5) * 6;
+          return Transform.translate(offset: Offset(0, bob), child: child);
+        },
+        child: Container(
+          width: 84,
+          height: 84,
+          decoration: BoxDecoration(
+            gradient: AppColors.premiumGradient,
+            shape: BoxShape.circle,
+            boxShadow: AppShadows.glow(AppColors.secondaryDark, opacity: 0.4),
+          ),
+          child: const Icon(Icons.workspace_premium_rounded,
+              color: Colors.white, size: 40),
+        ),
+      ),
+    );
+  }
+}
+
+class _FeatureRow extends StatelessWidget {
+  final String text;
+  final int index;
+  const _FeatureRow({required this.text, required this.index});
+
+  @override
+  Widget build(BuildContext context) {
+    final textColor = Theme.of(context).textTheme.bodyLarge!.color!;
+    return TweenAnimationBuilder<double>(
+      tween: Tween(begin: 0, end: 1),
+      duration: Duration(milliseconds: 260 + index * 60),
+      curve: Curves.easeOutCubic,
+      builder: (context, value, child) => Opacity(
+        opacity: value.clamp(0.0, 1.0),
+        child: Transform.translate(
+            offset: Offset((1 - value.clamp(0.0, 1.0)) * -14, 0), child: child),
+      ),
+      child: Padding(
+        padding: const EdgeInsets.only(bottom: 14),
+        child: Row(
+          children: [
+            Container(
+              width: 24,
+              height: 24,
+              decoration: BoxDecoration(
+                color: AppColors.successDark.withOpacity(0.15),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.check_rounded,
+                  color: AppColors.successDark, size: 16),
+            ),
+            const SizedBox(width: 12),
+            Expanded(child: Text(text, style: AppTextStyles.bodyMedium(textColor))),
+          ],
         ),
       ),
     );
@@ -149,28 +231,53 @@ class _PlanToggle extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
+      height: 52,
       padding: const EdgeInsets.all(4),
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(color: Theme.of(context).dividerColor),
       ),
-      child: Row(
-        children: [
-          Expanded(
-              child: _ToggleOption(
-                  label: 'Monthly',
-                  selected: !isYearly,
-                  onTap: () => onChanged(false))),
-          Expanded(
-            child: _ToggleOption(
-              label: 'Yearly',
-              badge: 'Save 25%',
-              selected: isYearly,
-              onTap: () => onChanged(true),
-            ),
-          ),
-        ],
+      child: LayoutBuilder(
+        builder: (context, constraints) {
+          final segmentWidth = constraints.maxWidth / 2;
+          return Stack(
+            children: [
+              AnimatedAlign(
+                duration: const Duration(milliseconds: 260),
+                curve: Curves.easeOutCubic,
+                alignment:
+                    isYearly ? Alignment.centerRight : Alignment.centerLeft,
+                child: Container(
+                  width: segmentWidth,
+                  height: double.infinity,
+                  decoration: BoxDecoration(
+                    gradient: AppColors.primaryGradient,
+                    borderRadius: BorderRadius.circular(10),
+                    boxShadow: AppShadows.glow(AppColors.primaryDark, opacity: 0.3),
+                  ),
+                ),
+              ),
+              Row(
+                children: [
+                  Expanded(
+                      child: _ToggleOption(
+                          label: 'Monthly',
+                          selected: !isYearly,
+                          onTap: () => onChanged(false))),
+                  Expanded(
+                    child: _ToggleOption(
+                      label: 'Yearly',
+                      badge: 'Save 25%',
+                      selected: isYearly,
+                      onTap: () => onChanged(true),
+                    ),
+                  ),
+                ],
+              ),
+            ],
+          );
+        },
       ),
     );
   }
@@ -194,33 +301,30 @@ class _ToggleOption extends StatelessWidget {
     final primary = Theme.of(context).primaryColor;
     return GestureDetector(
       onTap: onTap,
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: const EdgeInsets.symmetric(vertical: 10),
-        decoration: BoxDecoration(
-          gradient: selected ? AppColors.primaryGradient : null,
-          borderRadius: BorderRadius.circular(10),
-        ),
-        child: Column(
-          children: [
-            Text(
-              label,
-              style: TextStyle(
-                color: selected ? Colors.white : Theme.of(context).hintColor,
-                fontWeight: FontWeight.w700,
-              ),
+      behavior: HitTestBehavior.opaque,
+      child: Column(
+        mainAxisAlignment: MainAxisAlignment.center,
+        children: [
+          AnimatedDefaultTextStyle(
+            duration: const Duration(milliseconds: 220),
+            style: TextStyle(
+              color: selected ? Colors.white : Theme.of(context).hintColor,
+              fontWeight: FontWeight.w700,
+              fontSize: 14,
             ),
-            if (badge != null)
-              Text(
-                badge!,
-                style: TextStyle(
-                  color: selected ? Colors.white70 : primary,
-                  fontSize: 11,
-                  fontWeight: FontWeight.w600,
-                ),
+            child: Text(label),
+          ),
+          if (badge != null)
+            AnimatedDefaultTextStyle(
+              duration: const Duration(milliseconds: 220),
+              style: TextStyle(
+                color: selected ? Colors.white70 : primary,
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
               ),
-          ],
-        ),
+              child: Text(badge!),
+            ),
+        ],
       ),
     );
   }

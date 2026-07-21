@@ -6,6 +6,7 @@ always resolve it from the verified token's custom claims or, as a fallback,
 the user's Firestore profile document.
 """
 from dataclasses import dataclass
+from datetime import datetime, timezone
 
 import firebase_admin.auth as firebase_auth
 from fastapi import Depends, HTTPException, status
@@ -46,14 +47,35 @@ async def get_current_user(
     uid = decoded_token["uid"]
     email = decoded_token.get("email")
 
-    # Custom claims are the source of truth when present (set via the admin
-    # endpoint that promotes a user); otherwise fall back to the Firestore
-    # profile's `role` field, defaulting to "user".
-    role = decoded_token.get("role")
-    if role is None:
-        db = get_firestore_client()
-        doc = db.collection("users").document(uid).get()
-        role = (doc.to_dict() or {}).get("role", "user") if doc.exists else "user"
+    # Register/Google-sign-in only create the Firebase Auth account, not the
+    # Firestore users/{uid} doc — that previously only happened at the end
+    # of the 3-step Profile Setup wizard, which left the doc (and therefore
+    # isPremium/role/every dashboard stat derived from it) missing for any
+    # user who signed up but hadn't finished that wizard yet. Since every
+    # protected route depends on get_current_user, this is the one place
+    # guaranteed to run on a user's very first authenticated request —
+    # ensure the baseline doc exists here rather than relying on a
+    # multi-step client flow to eventually create it. Profile Setup's own
+    # PUT just fills in the rest of the fields afterward.
+    db = get_firestore_client()
+    doc_ref = db.collection("users").document(uid)
+    doc = doc_ref.get()
+    if not doc.exists:
+        doc_ref.set(
+            {
+                "uid": uid,
+                "email": email,
+                "isPremium": False,
+                "role": "user",
+                "createdAt": datetime.now(timezone.utc),
+            }
+        )
+        role = "user"
+    else:
+        # Custom claims are the source of truth when present (set via the
+        # admin endpoint that promotes a user); otherwise fall back to the
+        # Firestore profile's `role` field, defaulting to "user".
+        role = decoded_token.get("role") or doc.to_dict().get("role", "user")
 
     return CurrentUser(uid=uid, email=email, role=role)
 
